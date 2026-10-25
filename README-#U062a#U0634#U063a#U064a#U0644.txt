@@ -1,0 +1,8 @@
+خطوات التشغيل (Windows):
+1) ثبّت Node.js بنسخة 22 أو أحدث (node -v للتأكد).
+2) افتح CMD داخل هذا المجلد.
+3) npm install
+4) npm run dev
+5) افتح http://localhost:3000
+
+ملاحظة: إذا عندك node_modules أو package-lock.json قديمين احذفهم قبل npm install.

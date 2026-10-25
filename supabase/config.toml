@@ -1,0 +1,7 @@
+project_id = "eguqthkumahadzivssbo"
+
+[functions.notify-order]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = true

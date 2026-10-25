@@ -1,0 +1,235 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0c0c0c;
+  --color-surface: #141414;
+  --color-fg: #f4f1ea;
+  --color-muted: #9a968c;
+  --color-line: #2c2c2a;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Oswald", "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+  --tracking-brand: 0.18em;
+}
+
+@utility aspect-garment {
+  aspect-ratio: 3 / 4;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: dark;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    min-height: 100%;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: var(--color-fg);
+    color: var(--color-bg);
+  }
+
+  img,
+  video {
+    max-width: 100%;
+  }
+}
+
+@layer components {
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px solid var(--color-line);
+    background: var(--color-bg);
+    color: var(--color-fg);
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    outline: none;
+  }
+
+  .field:focus {
+    border-color: var(--color-fg);
+  }
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--color-muted);
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: var(--tracking-brand);
+    text-transform: uppercase;
+  }
+
+  .btn-solid,
+  .btn-line {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-brand);
+    text-transform: uppercase;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      opacity 200ms ease,
+      scale 150ms ease;
+  }
+
+  .btn-solid {
+    background: var(--color-fg);
+    color: var(--color-bg);
+  }
+
+  .btn-solid:hover:not(:disabled) {
+    opacity: 0.86;
+  }
+
+  .btn-line {
+    border: 1px solid var(--color-line);
+    background: transparent;
+    color: var(--color-fg);
+  }
+
+  .btn-line:hover:not(:disabled) {
+    background: var(--color-fg);
+    color: var(--color-bg);
+  }
+
+  /* Frosted-glass button for the hero (sits on a photo, same look in light and dark mode) */
+  .btn-glass {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid rgb(255 255 255 / 0.35);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 0.14);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-brand);
+    text-transform: uppercase;
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    box-shadow: 0 4px 18px rgb(0 0 0 / 0.18);
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      scale 150ms ease;
+  }
+
+  .btn-glass:hover {
+    background: rgb(255 255 255 / 0.26);
+    border-color: rgb(255 255 255 / 0.55);
+  }
+
+  .btn-glass:active {
+    scale: 0.96;
+  }
+
+  .btn-solid:disabled,
+  .btn-line:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .btn-solid:active:not(:disabled),
+  .btn-line:active:not(:disabled) {
+    scale: 0.96;
+  }
+
+  .owl-marquee {
+    animation: owl-marquee 75s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .owl-marquee {
+      animation: none;
+    }
+  }
+}
+
+@keyframes owl-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Hero shows the top 85% of the first screen; the content sheet (rounded top) overlaps the last 2rem */
+.hero-frame {
+  height: calc(85svh + 2rem);
+  min-height: 30rem;
+}
+
+/* Arabic: Cairo only fills in Arabic glyphs, no letter-spacing (it breaks Arabic joins) */
+html[lang="ar"] {
+  /* Latin letters keep Inter / Oswald; Cairo is only the fallback for Arabic glyphs */
+  --font-sans: "Inter", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Oswald", "Cairo", "Arial Narrow", sans-serif;
+  --tracking-brand: 0;
+}
+html[lang="ar"] .tracking-widest,
+html[lang="ar"] .tracking-brand,
+html[lang="ar"] .field-label,
+html[lang="ar"] .btn-solid,
+html[lang="ar"] .btn-line {
+  letter-spacing: 0;
+}
+
+/* Light mode */
+html[data-theme="light"] {
+  --color-bg: #f4f1ea;
+  --color-surface: #e9e5db;
+  --color-fg: #0c0c0c;
+  --color-muted: #6b675e;
+  --color-line: #d2cdc0;
+  color-scheme: light;
+}
+
+/* scrolls normally but shows no scrollbar (used by the product card pop-up) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Arabic product names: Cairo is thin at 400, so use the heavier weight to read as dark as the Latin text */
+html[lang="ar"] .product-name {
+  font-weight: 600;
+}
