@@ -110,7 +110,7 @@ function CompaniesSection() {
     const id = `c-${crypto.randomUUID().slice(0, 6)}`;
     setDraft((rows) => [
       ...rows,
-      { id, nameAr: "", nameEn: "", fee: "", deliveryAr: "", deliveryEn: "", enabled: true, sortOrder: rows.length + 1, zones: [] },
+      { id, nameAr: "", nameEn: "", fee: "", deliveryAr: "", deliveryEn: "", pickup: false, enabled: true, sortOrder: rows.length + 1, zones: [] },
     ]);
   }
 
@@ -230,13 +230,29 @@ function CompaniesSection() {
             </label>
           </div>
 
+          <label className="mt-4 flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={row.pickup}
+              onChange={(e) => patch(row.id, { pickup: e.target.checked })}
+            />
+            <span className="text-sm">
+              الاستلام من مكتب الشركة (الزبون ما بيكتب عنوان تفصيلي، وبيظهرله عنوان المكتب)
+            </span>
+          </label>
+
           <p className="mt-5 text-sm font-bold">المحافظات والمناطق التي تغطيها</p>
+          <p className="mt-1 text-xs text-muted">
+            {row.pickup
+              ? "اكتب عنوان المكتب في كل محافظة."
+              : "اكتب المناطق مفصولة بفاصلة عربية «،»، وكل منطقة بتظهر للزبون كبطاقة يختارها."}
+          </p>
           <div className="mt-2 overflow-x-auto border border-line">
             <table className="w-full min-w-[760px] text-sm">
               <thead className="border-b border-line text-xs text-muted">
                 <tr>
                   <th className="px-3 py-2 text-start font-normal">المحافظة</th>
-                  <th className="px-3 py-2 text-start font-normal">المناطق / نقطة الاستلام</th>
+                  <th className="px-3 py-2 text-start font-normal">{row.pickup ? "عنوان المكتب" : "المناطق"}</th>
                   <th className="px-3 py-2 text-start font-normal">المدة (عربي)</th>
                   <th className="px-3 py-2 text-start font-normal">Time (English)</th>
                   <th className="w-12" />

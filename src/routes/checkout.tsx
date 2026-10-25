@@ -80,6 +80,7 @@ function CheckoutPage() {
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
+  const [area, setArea] = useState("");
   const [receipt, setReceipt] = useState("");
   const [receiptName, setReceiptName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -117,6 +118,13 @@ function CheckoutPage() {
     company && companyZone
       ? { city, fee: company.fee, etaAr: companyZone.etaAr, etaEn: companyZone.etaEn }
       : null;
+  const pickup = Boolean(company?.pickup);
+  const areaList = !pickup && companyZone ? companyZone.areas.split(/[،,]/).map((a) => a.trim()).filter(Boolean) : [];
+  // What is saved as the address: the office for pick-up, or area + detailed address for home delivery.
+  const finalAddress =
+    company && companyZone && pickup
+      ? `استلام من مكتب ${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
+      : `${area ? `${area} - ` : ""}${address.trim()}`;
   const shipLabel = company ? (isAr ? company.nameAr : company.nameEn || company.nameAr) : "";
 
   // The chosen governorate is no longer open: say so right away and send the customer back to pick another one.
@@ -279,7 +287,8 @@ function CheckoutPage() {
       if (!city || !cityOpen) return setError(t("checkout.err.city"));
       if (!company) return setError(t("checkout.err.company"));
       if (!zone) return setError(t("checkout.err.city"));
-      if (address.trim().length < 8) return setError(t("checkout.err.address"));
+      if (!pickup && areaList.length > 0 && !area) return setError(t("checkout.err.area"));
+      if (!pickup && address.trim().length < 8) return setError(t("checkout.err.address"));
     }
     setStep((value) => Math.min(value + 1, 2));
   }
@@ -374,7 +383,7 @@ function CheckoutPage() {
         name: name.trim(),
         phone: normalizeDigits(phone).trim(),
         city,
-        address: address.trim(),
+        address: finalAddress,
       },
       shipping: { id: company?.id ?? city, label: company?.nameAr ?? city, fee: shippingFee, companyId: company?.id },
       items: rows.map((row) => ({
@@ -529,6 +538,7 @@ function CheckoutPage() {
                 onChange={(event) => {
                   setCity(event.target.value);
                   setCompanyId("");
+                  setArea("");
                 }}
               >
                 <option value="">{t("checkout.select")}</option>
@@ -541,16 +551,6 @@ function CheckoutPage() {
               {zonesLoaded && cityOptions.length === 0 ? (
                 <span className="mt-2 block border border-line p-3 text-sm text-muted">{t("checkout.noZones")}</span>
               ) : null}
-            </label>
-            <label>
-              <span className="field-label">{t("checkout.address")}</span>
-              <textarea
-                className="field min-h-28"
-                maxLength={300}
-                value={address}
-                onChange={(event) => setAddress(event.target.value)}
-                placeholder={t("checkout.addressPh")}
-              />
             </label>
             {city ? (
               <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("checkout.company")}>
@@ -566,7 +566,10 @@ function CheckoutPage() {
                       type="button"
                       role="radio"
                       aria-checked={chosen}
-                      onClick={() => setCompanyId(item.id)}
+                      onClick={() => {
+                        setCompanyId(item.id);
+                        setArea("");
+                      }}
                       className={cn(
                         "border px-4 py-3 text-start transition-colors",
                         chosen ? "border-fg bg-fg/5" : "border-line hover:border-fg",
@@ -578,11 +581,54 @@ function CheckoutPage() {
                       </span>
                       {delivery ? <span className="mt-1 block text-sm">{delivery}</span> : null}
                       {eta ? <span className="mt-1 block text-xs text-muted">{eta}</span> : null}
-                      {z?.areas ? <span className="mt-1 block text-xs text-muted">{z.areas}</span> : null}
                     </button>
                   );
                 })}
               </div>
+            ) : null}
+            {company && companyZone ? (
+              pickup ? (
+                <div className="border border-line px-4 py-3">
+                  <p className="field-label">{t("checkout.pickup")}</p>
+                  <p className="font-bold">{isAr ? company.nameAr : company.nameEn || company.nameAr}</p>
+                  {companyZone.areas ? <p className="mt-1 text-sm">{companyZone.areas}</p> : null}
+                </div>
+              ) : (
+                <>
+                  {areaList.length > 0 ? (
+                    <div role="radiogroup" aria-label={t("checkout.area")}>
+                      <p className="field-label">{t("checkout.area")}</p>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {areaList.map((item) => (
+                          <button
+                            key={item}
+                            type="button"
+                            role="radio"
+                            aria-checked={area === item}
+                            onClick={() => setArea(item)}
+                            className={cn(
+                              "border px-3 py-3 text-center text-sm transition-colors",
+                              area === item ? "border-fg bg-fg/5 font-bold" : "border-line hover:border-fg",
+                            )}
+                          >
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  <label>
+                    <span className="field-label">{t("checkout.address")}</span>
+                    <textarea
+                      className="field min-h-28"
+                      maxLength={300}
+                      value={address}
+                      onChange={(event) => setAddress(event.target.value)}
+                      placeholder={t("checkout.addressPh")}
+                    />
+                  </label>
+                </>
+              )
             ) : null}
           </div>
         ) : null}

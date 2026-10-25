@@ -155,7 +155,7 @@ export const CITIES = [
 /** A governorate a shipping company delivers to (with its own delivery time and pick-up / delivery areas). */
 export type CompanyZone = {
   city: string; // English governorate name, same list as CITIES
-  areas: string; // areas / pick-up point, free text
+  areas: string; // areas separated by «،» (home delivery) or the office address (pick-up)
   etaAr: string;
   etaEn: string;
 };
@@ -168,6 +168,7 @@ export type ShippingCompany = {
   fee: number;
   deliveryAr: string; // e.g. "إلى باب المنزل" / "الاستلام من مكتب الشركة"
   deliveryEn: string;
+  pickup: boolean; // true = the customer collects from the company office (no detailed address; the zone's text is the office address)
   enabled: boolean;
   sortOrder: number;
   zones: CompanyZone[];
@@ -186,6 +187,7 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
     fee: 4,
     deliveryAr: "إلى باب المنزل",
     deliveryEn: "Home delivery",
+    pickup: false,
     enabled: true,
     sortOrder: 1,
     zones: [
@@ -210,6 +212,7 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
     fee: 2,
     deliveryAr: "الاستلام من مكتب الشركة",
     deliveryEn: "Pick-up from the company office",
+    pickup: true,
     enabled: true,
     sortOrder: 2,
     zones: [

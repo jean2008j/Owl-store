@@ -15,6 +15,7 @@ create table if not exists public.shipping_companies (
   fee         numeric(10,2) not null default 0 check (fee >= 0),
   delivery_ar text          not null default '',     -- مثلاً: إلى باب المنزل / الاستلام من مكتب الشركة
   delivery_en text          not null default '',
+  pickup      boolean       not null default false,  -- true = استلام من مكتب الشركة (بدون عنوان تفصيلي)
   enabled     boolean       not null default true,
   sort_order  int           not null default 0,
   zones       jsonb         not null default '[]'::jsonb,
@@ -26,8 +27,20 @@ drop policy if exists "shipping_companies write" on public.shipping_companies;
 create policy "shipping_companies read"  on public.shipping_companies for select using (true);
 create policy "shipping_companies write" on public.shipping_companies for all to authenticated using (true) with check (true);
 
-insert into public.shipping_companies (id, name_ar, name_en, fee, delivery_ar, delivery_en, enabled, sort_order, zones) values
-  ('sila', 'صلة', 'Sila', 4, 'إلى باب المنزل', 'Home delivery', true, 1, '[
+-- عمود «استلام من مكتب الشركة» (للقاعدة القديمة): بينضاف مرة وحدة، والرافدين بتصير استلام من المكتب.
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'shipping_companies' and column_name = 'pickup'
+  ) then
+    alter table public.shipping_companies add column pickup boolean not null default false;
+    update public.shipping_companies set pickup = true where id = 'rafidain';
+  end if;
+end $$;
+
+insert into public.shipping_companies (id, name_ar, name_en, fee, delivery_ar, delivery_en, pickup, enabled, sort_order, zones) values
+  ('sila', 'صلة', 'Sila', 4, 'إلى باب المنزل', 'Home delivery', false, true, 1, '[
     {"city":"Damascus","areas":"الزبداني، القطيفة، برزة، يبرود، الزبلطاني، أشرفية صحنايا","etaAr":"5–10 أيام","etaEn":"5–10 days"},
     {"city":"Rural Damascus","areas":"الزبداني، القطيفة، برزة، يبرود، الزبلطاني، أشرفية صحنايا","etaAr":"5–10 أيام","etaEn":"5–10 days"},
     {"city":"Deir ez-Zor","areas":"البوكمال، الميادين، مركزي","etaAr":"5–10 أيام","etaEn":"5–10 days"},
@@ -41,7 +54,7 @@ insert into public.shipping_companies (id, name_ar, name_en, fee, delivery_ar, d
     {"city":"Raqqa","areas":"سوق الهال القديم، سلوك","etaAr":"5–10 أيام","etaEn":"5–10 days"},
     {"city":"Latakia","areas":"المشروع السابع، جبلة","etaAr":"5–10 أيام","etaEn":"5–10 days"}
   ]'::jsonb),
-  ('rafidain', 'الرافدين', 'Al-Rafidain', 2, 'الاستلام من مكتب الشركة', 'Pick-up from the company office', true, 2, '[
+  ('rafidain', 'الرافدين', 'Al-Rafidain', 2, 'الاستلام من مكتب الشركة', 'Pick-up from the company office', true, true, 2, '[
     {"city":"Damascus","areas":"جسر فيكتوريا خلف البريد القديم","etaAr":"2–3 أيام","etaEn":"2–3 days"},
     {"city":"Aleppo","areas":"السليمانية خلف زجاج غريبه","etaAr":"يومين","etaEn":"2 days"},
     {"city":"Homs","areas":"الكراج الشمالي","etaAr":"2–3 أيام","etaEn":"2–3 days"}

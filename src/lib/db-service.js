@@ -134,6 +134,7 @@ const mapCompany = (r) => ({
   fee: Number(r.fee) || 0,
   deliveryAr: r.delivery_ar || '',
   deliveryEn: r.delivery_en || '',
+  pickup: Boolean(r.pickup),
   enabled: Boolean(r.enabled),
   sortOrder: Number(r.sort_order) || 0,
   zones: (Array.isArray(r.zones) ? r.zones : []).map((z) => ({
@@ -165,6 +166,7 @@ export async function saveShippingCompanies(companies, removedIds = []) {
     fee: Math.max(0, Number(c.fee) || 0),
     delivery_ar: c.deliveryAr.trim(),
     delivery_en: c.deliveryEn.trim(),
+    pickup: Boolean(c.pickup),
     enabled: Boolean(c.enabled),
     sort_order: i + 1,
     zones: c.zones.map((z) => ({ city: z.city, areas: z.areas.trim(), etaAr: z.etaAr.trim(), etaEn: z.etaEn.trim() })),
