@@ -386,6 +386,16 @@ function CheckoutPage() {
         address: finalAddress,
       },
       shipping: { id: company?.id ?? city, label: company?.nameAr ?? city, fee: shippingFee, companyId: company?.id },
+      delivery: company
+        ? {
+            pickup,
+            office: pickup ? (companyZone?.areas ?? "") : "",
+            etaAr: companyZone?.etaAr ?? "",
+            etaEn: companyZone?.etaEn ?? "",
+            companyAr: company.nameAr,
+            companyEn: company.nameEn || company.nameAr,
+          }
+        : undefined,
       addressParts: pickup
         ? { area: companyZone?.areas ?? "", detail: "", pickup: true }
         : { area, detail: address.trim(), pickup: false },

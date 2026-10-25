@@ -210,6 +210,10 @@ export const en = {
   "order.noneNote": "Orders stay on the browser that placed them.",
   "order.continue": "Continue",
   "order.confirmed": "Order confirmed",
+  "order.success": "Your order has been placed successfully.",
+  "order.pickup": "Please collect your order from the {company} office at {office}, in {eta}.",
+  "order.pickupNoEta": "Please collect your order from the {company} office at {office}.",
+  "order.home": "Your order will arrive at your door within {eta}.",
   "order.note.sent": "A copy, with the receipt, was sent to the store on Telegram.",
   "order.note.failed":
     "The order is saved here. Telegram did not accept it — check the bot in Admin.",
@@ -522,6 +526,10 @@ export const ar = {
   "order.noneNote": "تبقى الطلبات محفوظة في المتصفح الذي أُرسلت منه.",
   "order.continue": "متابعة",
   "order.confirmed": "تم تأكيد الطلب",
+  "order.success": "تم تسجيل طلبك بنجاح.",
+  "order.pickup": "يُرجى مراجعة مكتب شركة {company} في {office} بعد {eta}.",
+  "order.pickupNoEta": "يُرجى مراجعة مكتب شركة {company} في {office}.",
+  "order.home": "ستصل المنتجات إلى باب منزلك خلال {eta}.",
   "order.note.sent": "تم إرسال نسخة من الطلب مع الإيصال إلى المتجر عبر تلغرام.",
   "order.note.failed":
     "تم حفظ الطلب هنا. لم يقبله تلغرام — تحقق من البوت في صفحة الإدارة.",

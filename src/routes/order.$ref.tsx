@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { money } from "@/lib/store/catalog";
+import { fetchShippingCompanies } from "@/lib/db-service";
+import { money, type Order, type ShippingCompany } from "@/lib/store/catalog";
 import { useI18n } from "@/lib/i18n";
 import { useOwl } from "@/lib/store/owl-store";
 
@@ -12,10 +14,24 @@ export const Route = createFileRoute("/order/$ref")({
 
 function OrderPage() {
   const { ref } = Route.useParams();
-  const { t, orderItemName, orderItemColor, fitLabel, cityLabel } = useI18n();
+  const { t, isAr, orderItemName, orderItemColor, fitLabel, cityLabel } = useI18n();
   const products = useOwl((state) => state.products);
   const hydrated = useOwl((state) => state.hydrated);
   const order = useOwl((state) => state.orders.find((item) => item.ref === ref));
+
+  // Orders placed before the delivery note existed have no saved copy of it: read it from the company list instead.
+  const [companies, setCompanies] = useState<ShippingCompany[]>([]);
+  const needLookup = Boolean(order && !order.delivery && order.shipping.companyId);
+  useEffect(() => {
+    if (!needLookup) return;
+    let live = true;
+    void fetchShippingCompanies().then((rows) => {
+      if (live && rows) setCompanies(rows);
+    });
+    return () => {
+      live = false;
+    };
+  }, [needLookup]);
 
   if (!hydrated) {
     return (
@@ -45,11 +61,25 @@ function OrderPage() {
         ? t("order.note.failed")
         : t("order.note.unconfigured");
 
+  const delivery = order.delivery ?? deliveryFromCompanies(order, companies);
+  const deliveryLine = delivery
+    ? (() => {
+        const company = isAr ? delivery.companyAr : delivery.companyEn;
+        const eta = (isAr ? delivery.etaAr : delivery.etaEn || delivery.etaAr).trim();
+        if (delivery.pickup) {
+          const office = [cityLabel(order.customer.city), delivery.office].filter(Boolean).join(" – ");
+          return t(eta ? "order.pickup" : "order.pickupNoEta", { company, office, eta });
+        }
+        return eta ? t("order.home", { eta }) : null;
+      })()
+    : null;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 md:py-24">
       <p className="font-display text-xs tracking-brand text-muted uppercase">{t("order.confirmed")}</p>
       <h1 className="mt-3 font-display text-5xl tracking-widest md:text-7xl">{order.ref}</h1>
-      <p className="mt-4 max-w-lg text-sm text-muted">{t("order.match")}</p>
+      <p className="mt-4 max-w-lg text-base font-bold">{t("order.success")}</p>
+      {deliveryLine ? <p className="mt-2 max-w-lg text-sm">{deliveryLine}</p> : null}
       {note ? <p className="mt-2 max-w-lg text-sm text-muted">{note}</p> : null}
 
       <div className="mt-10 border border-line p-5">
@@ -86,4 +116,18 @@ function OrderPage() {
       </Link>
     </div>
   );
+}
+
+function deliveryFromCompanies(order: Order, companies: ShippingCompany[]): Order["delivery"] {
+  const company = companies.find((item) => item.id === order.shipping.companyId);
+  const zone = company?.zones.find((item) => item.city === order.customer.city);
+  if (!company || !zone) return undefined;
+  return {
+    pickup: company.pickup,
+    office: company.pickup ? zone.areas : "",
+    etaAr: zone.etaAr,
+    etaEn: zone.etaEn,
+    companyAr: company.nameAr,
+    companyEn: company.nameEn || company.nameAr,
+  };
 }

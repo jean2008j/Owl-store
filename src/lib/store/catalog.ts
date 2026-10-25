@@ -126,6 +126,8 @@ export type Order = {
   shipping: { id: string; label: string; fee: number; companyId?: string };
   /** Only used to build the Telegram message (the database keeps the joined `customer.address`). */
   addressParts?: { area: string; detail: string; pickup: boolean };
+  /** What the customer was told about delivery (shown on the order page). */
+  delivery?: { pickup: boolean; office: string; etaAr: string; etaEn: string; companyAr: string; companyEn: string };
   items: OrderItem[];
   subtotal: number;
   discount?: number; // coupon discount on the items (shipping is never discounted)
