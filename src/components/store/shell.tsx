@@ -200,7 +200,7 @@ export function Shell() {
                     className="-translate-y-[2px] font-display text-[17px] leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-black uppercase"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Owl Store
+                    Athar &amp; Owl
                   </Link>
                 </div>
                 <HeaderControls count={count} onOpen={() => setMenuOpen(false)} />
@@ -216,7 +216,7 @@ export function Shell() {
                     to="/"
                     className="font-display text-2xl font-semibold tracking-widest whitespace-nowrap text-white uppercase"
                   >
-                    Owl Store
+                    Athar &amp; Owl
                   </Link>
                 </div>
                 <nav className="lg:max-w-[min(68vw,1300px)]">
