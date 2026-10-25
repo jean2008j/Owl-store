@@ -152,43 +152,6 @@ export const CITIES = [
   "Al-Hasakah",
 ] as const;
 
-/** One governorate the store ships to. Edited in the admin ("الشحن والعروض"), stored in `shipping_zones`. */
-export type ShippingZone = {
-  city: string;
-  enabled: boolean;
-  fee: number;
-  etaAr: string;
-  etaEn: string;
-  sortOrder: number;
-};
-
-const zone = (city: string, fee: number, etaAr: string, etaEn: string, sortOrder: number): ShippingZone => ({
-  city,
-  enabled: true,
-  fee,
-  etaAr,
-  etaEn,
-  sortOrder,
-});
-
-/** Used before the database answers (or in demo mode without Supabase). */
-export const DEFAULT_SHIPPING_ZONES: ShippingZone[] = [
-  zone("Damascus", 4, "من يوم إلى يومين", "1–2 days", 1),
-  zone("Rural Damascus", 6, "2–4 أيام", "2–4 days", 2),
-  zone("Aleppo", 6, "2–4 أيام", "2–4 days", 3),
-  zone("Homs", 6, "2–4 أيام", "2–4 days", 4),
-  zone("Hama", 6, "2–4 أيام", "2–4 days", 5),
-  zone("Latakia", 6, "2–4 أيام", "2–4 days", 6),
-  zone("Tartus", 6, "2–4 أيام", "2–4 days", 7),
-  zone("Idlib", 9, "3–6 أيام", "3–6 days", 8),
-  zone("Daraa", 9, "3–6 أيام", "3–6 days", 9),
-  zone("As-Suwayda", 9, "3–6 أيام", "3–6 days", 10),
-  zone("Quneitra", 9, "3–6 أيام", "3–6 days", 11),
-  zone("Deir ez-Zor", 9, "3–6 أيام", "3–6 days", 12),
-  zone("Raqqa", 9, "3–6 أيام", "3–6 days", 13),
-  zone("Al-Hasakah", 9, "3–6 أيام", "3–6 days", 14),
-];
-
 /** A governorate a shipping company delivers to (with its own delivery time and pick-up / delivery areas). */
 export type CompanyZone = {
   city: string; // English governorate name, same list as CITIES

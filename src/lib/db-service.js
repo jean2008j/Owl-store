@@ -126,43 +126,6 @@ export async function upsertPaymentSettings(payment) {
   return error ? { ok: false, message: explainSupabaseError(error.message) } : { ok: true }
 }
 
-// ---------- Shipping zones (governorates + fee), edited in the admin tab "الشحن والعروض" ----------
-const mapZone = (r) => ({
-  city: r.city,
-  enabled: Boolean(r.enabled),
-  fee: Number(r.fee) || 0,
-  etaAr: r.eta_ar || '',
-  etaEn: r.eta_en || '',
-  sortOrder: Number(r.sort_order) || 0,
-})
-
-// null = الجدول غير موجود/خطأ (الموقع يستخدم القيم الافتراضية)، [] = موجود وفاضي
-export async function fetchShippingZones() {
-  if (!supabase) return null
-  const { data, error } = await supabase.from('shipping_zones').select('*').order('sort_order', { ascending: true })
-  if (error) {
-    console.error('خطأ في جلب مناطق الشحن:', error.message)
-    return null
-  }
-  return (data || []).map(mapZone)
-}
-
-export async function saveShippingZones(zones) {
-  if (!supabase) return { ok: false, message: 'Supabase غير مُعرّف' }
-  const rows = zones.map((z, i) => ({
-    city: z.city,
-    enabled: z.enabled,
-    fee: Math.max(0, Number(z.fee) || 0),
-    eta_ar: z.etaAr || '',
-    eta_en: z.etaEn || '',
-    sort_order: z.sortOrder || i + 1,
-    updated_at: new Date().toISOString(),
-  }))
-  const { error } = await supabase.from('shipping_zones').upsert(rows, { onConflict: 'city' })
-  if (error) console.error('خطأ في حفظ الشحن:', error.message)
-  return error ? { ok: false, message: explainSupabaseError(error.message) } : { ok: true }
-}
-
 // ---------- Shipping companies (Sila, Al-Rafidain…): flat fee + covered governorates, chosen by the customer ----------
 const mapCompany = (r) => ({
   id: r.id,
@@ -181,7 +144,7 @@ const mapCompany = (r) => ({
   })),
 })
 
-// null = الجدول غير موجود/خطأ (الموقع يرجع لشحن المحافظات)، [] = موجود وفاضي
+// null = الجدول غير موجود/خطأ، [] = موجود وفاضي (بالحالتين الزبون ما بيقدر يكمل الطلب)
 export async function fetchShippingCompanies() {
   if (!supabase) return null
   const { data, error } = await supabase.from('shipping_companies').select('*').order('sort_order', { ascending: true })
@@ -294,7 +257,7 @@ function explainOffersError(message = '') {
   if (/coupons_percent_max/i.test(message)) return 'نسبة الخصم لا يمكن أن تتجاوز 100%.'
   if (/COUPON_CODE_TOO_SHORT/i.test(message)) return 'يجب أن يكون الكود 6 أحرف أو أرقام على الأقل (الأطول أصعب في التخمين).'
   if (/coupons_dates/i.test(message)) return 'يجب أن يكون تاريخ النهاية بعد تاريخ البداية.'
-  if (/relation .*(coupons|shipping_zones|shipping_companies).* does not exist|schema cache/i.test(message)) {
+  if (/relation .*(coupons|shipping_companies).* does not exist|schema cache/i.test(message)) {
     return 'جداول الشحن والعروض غير موجودة. شغّل ملف supabase-offers.sql في Supabase.'
   }
   return explainSupabaseError(message)

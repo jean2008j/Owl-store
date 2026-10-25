@@ -1,47 +1,12 @@
--- OWL STORE: الشحن حسب المحافظة + أكواد الخصم (الحساب كله بقاعدة البيانات)
+-- OWL STORE: شركات الشحن + أكواد الخصم (الحساب كله بقاعدة البيانات)
 -- شغّله مرة وحدة: Supabase > SQL Editor > New query > الصق > Run  (آمن لو شغّلته أكثر من مرة)
 -- الترتيب: supabase-setup.sql ← supabase-fix.sql ← supabase-security.sql ← هذا الملف.
 -- هذا الملف هو المكان الوحيد اللي بتتعرّف فيه: place_order و quote_order و get_secret_products (لا تعرّفهم بمكان تاني).
 
 -- ============================================================
--- 1) المحافظات المتاحة للشحن وسعر الشحن لكل محافظة
--- ============================================================
-create table if not exists public.shipping_zones (
-  city        text primary key,                       -- الاسم الإنكليزي (نفس القائمة بالموقع)
-  enabled     boolean       not null default true,    -- معطّلة = ما تظهر للزبون
-  fee         numeric(10,2) not null default 0 check (fee >= 0),
-  eta_ar      text          not null default '',      -- مدة التوصيل بالعربي
-  eta_en      text          not null default '',      -- مدة التوصيل بالإنكليزي
-  sort_order  int           not null default 0,
-  updated_at  timestamptz   not null default now()
-);
-alter table public.shipping_zones enable row level security;
-drop policy if exists "shipping_zones read"  on public.shipping_zones;
-drop policy if exists "shipping_zones write" on public.shipping_zones;
-create policy "shipping_zones read"  on public.shipping_zones for select using (true);
-create policy "shipping_zones write" on public.shipping_zones for all to authenticated using (true) with check (true);
-
-insert into public.shipping_zones (city, enabled, fee, eta_ar, eta_en, sort_order) values
-  ('Damascus',       true, 4, 'من يوم إلى يومين', '1–2 days',  1),
-  ('Rural Damascus', true, 6, '2–4 أيام',         '2–4 days',  2),
-  ('Aleppo',         true, 6, '2–4 أيام',         '2–4 days',  3),
-  ('Homs',           true, 6, '2–4 أيام',         '2–4 days',  4),
-  ('Hama',           true, 6, '2–4 أيام',         '2–4 days',  5),
-  ('Latakia',        true, 6, '2–4 أيام',         '2–4 days',  6),
-  ('Tartus',         true, 6, '2–4 أيام',         '2–4 days',  7),
-  ('Idlib',          true, 9, '3–6 أيام',         '3–6 days',  8),
-  ('Daraa',          true, 9, '3–6 أيام',         '3–6 days',  9),
-  ('As-Suwayda',     true, 9, '3–6 أيام',         '3–6 days', 10),
-  ('Quneitra',       true, 9, '3–6 أيام',         '3–6 days', 11),
-  ('Deir ez-Zor',    true, 9, '3–6 أيام',         '3–6 days', 12),
-  ('Raqqa',          true, 9, '3–6 أيام',         '3–6 days', 13),
-  ('Al-Hasakah',     true, 9, '3–6 أيام',         '3–6 days', 14)
-on conflict (city) do nothing;
-
--- ============================================================
--- 1b) شركات الشحن (صلة، الرافدين...): كل شركة بسعر ثابت ومناطق تغطيها. الزبون يختار الشركة بصفحة الدفع.
+-- 1) شركات الشحن (صلة، الرافدين...): كل شركة بسعر ثابت ومناطق تغطيها. الزبون يختار الشركة بصفحة الدفع.
 --     zones = مصفوفة: [{ "city": "Damascus", "areas": "...", "etaAr": "...", "etaEn": "..." }]
---     إذا الجدول فاضي أو ما في شركة مفعّلة، الموقع يرجع يستخدم شحن المحافظات (القسم 1) متل قبل.
+--     إذا ما في شركة مفعّلة تغطي المحافظة، ما بيتقبّل أي طلب لهالمحافظة.
 -- ============================================================
 create table if not exists public.shipping_companies (
   id          text primary key,
@@ -286,7 +251,6 @@ declare
   v_secret_ok boolean := null;
   v_sub     numeric := 0;
   v_prices  jsonb := '[]'::jsonb;
-  z         public.shipping_zones%rowtype;
   sc        public.shipping_companies%rowtype;
   v_fee     numeric;
   c         public.coupons%rowtype;
@@ -338,24 +302,15 @@ begin
     v_prices := v_prices || to_jsonb(v_price);
   end loop;
 
-  -- الشحن: إذا انبعتت شركة شحن، السعر سعرها بشرط تكون مفعّلة وتغطي هالمحافظة.
-  -- وإلا (موقع قديم/ما في شركات) السعر حسب المحافظة (لازم تكون موجودة ومفعّلة).
-  if nullif(btrim(coalesce(p_company, '')), '') is not null then
-    select * into sc from public.shipping_companies where id = p_company;
-    if not found or not sc.enabled
-       or not exists (
-         select 1 from jsonb_array_elements(sc.zones) zz where zz->>'city' = p_city
-       ) then
-      return jsonb_build_object('ok', false, 'error', 'CITY_UNAVAILABLE');
-    end if;
-    v_fee := sc.fee;
-  else
-    select * into z from public.shipping_zones where city = p_city;
-    if not found or not z.enabled then
-      return jsonb_build_object('ok', false, 'error', 'CITY_UNAVAILABLE');
-    end if;
-    v_fee := z.fee;
+  -- الشحن: لازم شركة شحن مفعّلة تغطي هالمحافظة، والسعر سعرها. بدون شركة ما في طلب.
+  select * into sc from public.shipping_companies where id = nullif(btrim(coalesce(p_company, '')), '');
+  if not found or not sc.enabled
+     or not exists (
+       select 1 from jsonb_array_elements(sc.zones) zz where zz->>'city' = p_city
+     ) then
+    return jsonb_build_object('ok', false, 'error', 'CITY_UNAVAILABLE');
   end if;
+  v_fee := sc.fee;
 
   -- كود الخصم (يُطبَّق على المنتجات فقط، بدون الشحن)
   -- كل محاولة فاشلة (كود غلط/منتهي/مستنفد) بتنسجّل؛ بعد 8 محاولات بـ 10 دقائق من نفس العميل بنوقف التحقق مؤقتاً.
@@ -483,7 +438,7 @@ begin
   end if;
 
   q := public.quote_order(p_order->'items', v_city, nullif(v_code, ''), v_secret, v_company);
-  if v_company is not null and (q->>'ok')::boolean then
+  if (q->>'ok')::boolean then
     select name_ar into v_cname from public.shipping_companies where id = v_company;
   end if;
   if not (q->>'ok')::boolean then
@@ -595,9 +550,7 @@ begin
     'ref',       v_ref,
     'createdAt', to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     'customer',  jsonb_build_object('name', v_name, 'phone', v_phone, 'city', v_city, 'address', v_addr),
-    'shipping',  case when v_company is not null
-                      then jsonb_build_object('id', v_company, 'label', coalesce(v_cname, v_company), 'fee', (q->>'shipping_fee')::numeric, 'companyId', v_company)
-                      else jsonb_build_object('id', v_city, 'label', v_city, 'fee', (q->>'shipping_fee')::numeric) end,
+    'shipping',  jsonb_build_object('id', v_company, 'label', coalesce(v_cname, v_company), 'fee', (q->>'shipping_fee')::numeric, 'companyId', v_company),
     'items',     v_items,
     'subtotal',  (q->>'subtotal')::numeric,
     'discount',  (q->>'discount')::numeric,

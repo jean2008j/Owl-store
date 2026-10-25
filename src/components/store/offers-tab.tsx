@@ -5,26 +5,22 @@ import {
   deleteCoupon,
   fetchCoupons,
   fetchShippingCompanies,
-  fetchShippingZones,
   isSupabaseConfigured,
   saveCoupon,
   saveShippingCompanies,
-  saveShippingZones,
   setCouponActive,
 } from "@/lib/db-service";
 import {
   CITIES,
   DEFAULT_SHIPPING_COMPANIES,
-  DEFAULT_SHIPPING_ZONES,
   money,
   type Coupon,
   type ShippingCompany,
-  type ShippingZone,
 } from "@/lib/store/catalog";
 import { CITY_AR } from "@/lib/i18n/content";
 import { cn } from "@/lib/utils";
 
-/** "الشحن والعروض" tab: shipping fee per governorate + discount codes. Everything is priced by the database. */
+/** "الشحن والعروض" tab: shipping companies + discount codes. Everything is priced by the database. */
 export function OffersTab() {
   if (!isSupabaseConfigured) {
     return (
@@ -38,12 +34,9 @@ export function OffersTab() {
     <div className="flex flex-col gap-12">
       <Block
         title="شركات الشحن"
-        hint="كل شركة لها سعر ثابت والمحافظات التي تغطيها. الزبون يختار الشركة في صفحة الدفع. إذا ما في أي شركة مفعّلة، يُستخدم جدول الشحن حسب المحافظة أدناه."
+        hint="كل شركة لها سعر ثابت والمحافظات التي تغطيها. الزبون يختار الشركة في صفحة الدفع. إذا ما في أي شركة مفعّلة تغطي محافظة الزبون، ما بيقدر يكمل الطلب."
       >
         <CompaniesSection />
-      </Block>
-      <Block title="الشحن حسب المحافظة" hint="فعّل المحافظات التي توصل إليها وحدّد سعر الشحن لكل محافظة. المحافظة المعطّلة لا تظهر للزبون.">
-        <ShippingSection />
       </Block>
       <Block
         title="أكواد الخصم"
@@ -64,174 +57,6 @@ function Block({ title, hint, children }: { title: string; hint?: string; childr
       </div>
       {children}
     </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Shipping zones                                                       */
-/* ------------------------------------------------------------------ */
-
-type ZoneDraft = Omit<ShippingZone, "fee"> & { fee: string };
-
-const toDraft = (zones: ShippingZone[]): ZoneDraft[] => zones.map((z) => ({ ...z, fee: String(z.fee) }));
-
-function ShippingSection() {
-  const [saved, setSaved] = useState<ShippingZone[] | null>(null);
-  const [draft, setDraft] = useState<ZoneDraft[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [notSaved, setNotSaved] = useState(false);
-  const [restored, setRestored] = useState<string[]>([]);
-
-  useEffect(() => {
-    let live = true;
-    void fetchShippingZones().then((rows) => {
-      if (!live) return;
-      // No rows yet (SQL not run / empty table): show the defaults and let the admin save them.
-      const base = rows && rows.length ? rows : DEFAULT_SHIPPING_ZONES;
-      setNotSaved(!rows || rows.length === 0);
-      setSaved(base);
-      // A governorate that is missing from the table (deleted by mistake) comes back as a closed row, so it can be re-enabled and saved.
-      const have = new Set(base.map((row) => row.city));
-      const missing = rows && rows.length ? DEFAULT_SHIPPING_ZONES.filter((row) => !have.has(row.city)) : [];
-      setRestored(missing.map((row) => row.city));
-      setDraft(toDraft([...base, ...missing.map((row) => ({ ...row, enabled: false }))]));
-      setLoading(false);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
-
-  const dirty = useMemo(
-    () => notSaved || JSON.stringify(draft) !== JSON.stringify(saved ? toDraft(saved) : []),
-    [draft, saved, notSaved],
-  );
-
-  function patch(city: string, change: Partial<ZoneDraft>) {
-    setDraft((rows) => rows.map((row) => (row.city === city ? { ...row, ...change } : row)));
-  }
-
-  async function save() {
-    const zones: ShippingZone[] = [];
-    for (const row of draft) {
-      const fee = Number(row.fee);
-      if (row.fee.trim() === "" || !Number.isFinite(fee) || fee < 0) {
-        toast.error(`سعر الشحن لـ ${CITY_AR[row.city] ?? row.city} غير صحيح.`);
-        return;
-      }
-      zones.push({ ...row, fee });
-    }
-    setSaving(true);
-    const res = await saveShippingZones(zones);
-    setSaving(false);
-    if (!res.ok) return toast.error(res.message || "تعذّر حفظ الشحن.");
-    setSaved(zones);
-    setDraft(toDraft(zones));
-    setNotSaved(false);
-    setRestored([]);
-    toast("تم حفظ الشحن.");
-  }
-
-  if (loading) return <Loader2 className="size-5 animate-spin text-muted" />;
-
-  const activeCount = draft.filter((row) => row.enabled).length;
-
-  return (
-    <div className="flex flex-col gap-4">
-      {notSaved ? (
-        <p className="border border-line p-3 text-xs text-muted">
-          هذه القيم افتراضية ولم تُحفظ في قاعدة البيانات بعد. عدّلها ثم اضغط «حفظ». (إذا لم ينجح الحفظ، شغّل ملف
-          supabase-offers.sql في Supabase.)
-        </p>
-      ) : null}
-      {restored.length ? (
-        <p className="border border-line p-3 text-xs text-muted">
-          محافظات غير موجودة في قاعدة البيانات أُضيفت هنا معطّلة: {restored.map((city) => CITY_AR[city] ?? city).join("، ")}. فعّلها ثم اضغط «حفظ» لإرجاعها.
-        </p>
-      ) : null}
-      <div className="overflow-x-auto border border-line">
-        <table className="w-full min-w-[720px] text-start text-sm">
-          <thead className="border-b border-line text-xs text-muted">
-            <tr>
-              <th className="px-3 py-3 text-start font-normal">المحافظة</th>
-              <th className="px-3 py-3 text-start font-normal">الحالة</th>
-              <th className="px-3 py-3 text-start font-normal">سعر الشحن ($)</th>
-              <th className="px-3 py-3 text-start font-normal">مدة التوصيل (عربي)</th>
-              <th className="px-3 py-3 text-start font-normal">مدة التوصيل (English)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {draft.map((row) => (
-              <tr key={row.city} className={cn("border-b border-line last:border-0", !row.enabled && "opacity-60")}>
-                <td className="px-3 py-2 font-bold">{CITY_AR[row.city] ?? row.city}</td>
-                <td className="px-3 py-2">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={row.enabled}
-                    onClick={() => patch(row.city, { enabled: !row.enabled })}
-                    className={cn(
-                      "min-h-9 px-3 font-display text-xs tracking-widest",
-                      row.enabled ? "bg-fg text-bg" : "border border-line text-muted",
-                    )}
-                  >
-                    {row.enabled ? "مفعّلة" : "معطّلة"}
-                  </button>
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    className="field w-24"
-                    dir="ltr"
-                    inputMode="decimal"
-                    value={row.fee}
-                    onChange={(event) => patch(row.city, { fee: event.target.value })}
-                    aria-label={`سعر الشحن ${CITY_AR[row.city] ?? row.city}`}
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    className="field min-w-36"
-                    value={row.etaAr}
-                    onChange={(event) => patch(row.city, { etaAr: event.target.value })}
-                    placeholder="مثلاً: 2–4 أيام"
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    className="field min-w-32"
-                    dir="ltr"
-                    value={row.etaEn}
-                    onChange={(event) => patch(row.city, { etaEn: event.target.value })}
-                    placeholder="e.g. 2–4 days"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div dir="ltr" className="flex flex-wrap items-center justify-start gap-2">
-        <button type="button" className="btn-solid" disabled={!dirty || saving} onClick={() => void save()}>
-          {saving ? <Loader2 className="size-4 animate-spin" /> : null}
-          حفظ الشحن
-        </button>
-        <button
-          type="button"
-          className="btn-line"
-          disabled={!dirty || saving || !saved}
-          onClick={() => {
-            if (!saved) return;
-            setDraft(toDraft(saved));
-          }}
-        >
-          إلغاء التغييرات
-        </button>
-        <span dir="rtl" className="ms-2 text-xs text-muted">
-          {activeCount} من {draft.length} محافظة مفعّلة{dirty ? " · في تغييرات غير محفوظة" : ""}
-        </span>
-      </div>
-    </div>
   );
 }
 
