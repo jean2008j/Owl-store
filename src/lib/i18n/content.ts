@@ -14,5 +14,5 @@ export const CITY_AR: Record<string, string> = {
   Quneitra: "القنيطرة",
   "Deir ez-Zor": "دير الزور",
   Raqqa: "الرقة",
-  "Al-Hasakah": "الحسكة",
+  "Al-Hasakah": "الحسكة والقامشلي",
 };

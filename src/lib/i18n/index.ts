@@ -166,7 +166,8 @@ function buildI18n(lang: Lang) {
 
   // ---- fixed data ----
   const fitLabel = (fit: string) => (fit in FIT_KEY ? t(FIT_KEY[fit as Fit]) : fit);
-  const cityLabel = (city: string) => (isAr ? (CITY_AR[city] ?? city) : city);
+  const cityLabel = (city: string) =>
+    isAr ? (CITY_AR[city] ?? city) : city === "Al-Hasakah" ? "Al-Hasakah & Qamishli" : city;
 
   // ---- editable storefront copy ----
   function settingText(settings: Settings, key: SettingTextKey) {

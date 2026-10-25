@@ -50,7 +50,7 @@ insert into public.shipping_companies (id, name_ar, name_en, fee, delivery_ar, d
     {"city":"Homs","areas":"كرم اللوز، الحولة، الرستن، تل كلخ","etaAr":"5–10 أيام","etaEn":"5–10 days"},
     {"city":"Daraa","areas":"المجمع الحكومي، انخل","etaAr":"5–10 أيام","etaEn":"5–10 days"},
     {"city":"Idlib","areas":"المتنبي، أريحا، البارة، حارم، خان شيخون، سراقب، سرمدا، معرة النعمان","etaAr":"5–10 أيام","etaEn":"5–10 days"},
-    {"city":"Al-Hasakah","areas":"الحسكة والقامشلي: الكلاسة، مركزي - دوار التفاحة","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Al-Hasakah","areas":"الكلاسة، مركزي - دوار التفاحة","etaAr":"5–10 أيام","etaEn":"5–10 days"},
     {"city":"Raqqa","areas":"سوق الهال القديم، سلوك","etaAr":"5–10 أيام","etaEn":"5–10 days"},
     {"city":"Latakia","areas":"المشروع السابع، جبلة","etaAr":"5–10 أيام","etaEn":"5–10 days"}
   ]'::jsonb),
@@ -60,6 +60,11 @@ insert into public.shipping_companies (id, name_ar, name_en, fee, delivery_ar, d
     {"city":"Homs","areas":"الكراج الشمالي","etaAr":"2–3 أيام","etaEn":"2–3 days"}
   ]'::jsonb)
 on conflict (id) do nothing;
+
+-- تصحيح: «الحسكة والقامشلي:» كانت داخل نص المناطق فتظهر كبطاقة؛ الاسم صار اسم المحافظة نفسها.
+update public.shipping_companies
+   set zones = replace(zones::text, 'الحسكة والقامشلي: ', '')::jsonb
+ where id = 'sila' and zones::text like '%الحسكة والقامشلي: %';
 
 -- ============================================================
 -- 2) أكواد الخصم (الزبون ما يقدر يقرأ الجدول أبداً؛ يتحقق من الكود عبر الدالة تحت)
