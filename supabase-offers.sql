@@ -39,6 +39,51 @@ insert into public.shipping_zones (city, enabled, fee, eta_ar, eta_en, sort_orde
 on conflict (city) do nothing;
 
 -- ============================================================
+-- 1b) شركات الشحن (صلة، الرافدين...): كل شركة بسعر ثابت ومناطق تغطيها. الزبون يختار الشركة بصفحة الدفع.
+--     zones = مصفوفة: [{ "city": "Damascus", "areas": "...", "etaAr": "...", "etaEn": "..." }]
+--     إذا الجدول فاضي أو ما في شركة مفعّلة، الموقع يرجع يستخدم شحن المحافظات (القسم 1) متل قبل.
+-- ============================================================
+create table if not exists public.shipping_companies (
+  id          text primary key,
+  name_ar     text          not null,
+  name_en     text          not null default '',
+  fee         numeric(10,2) not null default 0 check (fee >= 0),
+  delivery_ar text          not null default '',     -- مثلاً: إلى باب المنزل / الاستلام من مكتب الشركة
+  delivery_en text          not null default '',
+  enabled     boolean       not null default true,
+  sort_order  int           not null default 0,
+  zones       jsonb         not null default '[]'::jsonb,
+  updated_at  timestamptz   not null default now()
+);
+alter table public.shipping_companies enable row level security;
+drop policy if exists "shipping_companies read"  on public.shipping_companies;
+drop policy if exists "shipping_companies write" on public.shipping_companies;
+create policy "shipping_companies read"  on public.shipping_companies for select using (true);
+create policy "shipping_companies write" on public.shipping_companies for all to authenticated using (true) with check (true);
+
+insert into public.shipping_companies (id, name_ar, name_en, fee, delivery_ar, delivery_en, enabled, sort_order, zones) values
+  ('sila', 'صلة', 'Sila', 4, 'إلى باب المنزل', 'Home delivery', true, 1, '[
+    {"city":"Damascus","areas":"الزبداني، القطيفة، برزة، يبرود، الزبلطاني، أشرفية صحنايا","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Rural Damascus","areas":"الزبداني، القطيفة، برزة، يبرود، الزبلطاني، أشرفية صحنايا","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Deir ez-Zor","areas":"البوكمال، الميادين، مركزي","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Tartus","areas":"حديقة الملجأ، بانياس، دريكيش","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Aleppo","areas":"منبج، مركزي - الأعظمية، اعزاز، الأتارب، الباب، دوار الموت","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Hama","areas":"البارودية، السقيلبية، سلمية، مصياف","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Homs","areas":"كرم اللوز، الحولة، الرستن، تل كلخ","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Daraa","areas":"المجمع الحكومي، انخل","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Idlib","areas":"المتنبي، أريحا، البارة، حارم، خان شيخون، سراقب، سرمدا، معرة النعمان","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Al-Hasakah","areas":"الحسكة والقامشلي: الكلاسة، مركزي - دوار التفاحة","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Raqqa","areas":"سوق الهال القديم، سلوك","etaAr":"5–10 أيام","etaEn":"5–10 days"},
+    {"city":"Latakia","areas":"المشروع السابع، جبلة","etaAr":"5–10 أيام","etaEn":"5–10 days"}
+  ]'::jsonb),
+  ('rafidain', 'الرافدين', 'Al-Rafidain', 2, 'الاستلام من مكتب الشركة', 'Pick-up from the company office', true, 2, '[
+    {"city":"Damascus","areas":"جسر فيكتوريا خلف البريد القديم","etaAr":"2–3 أيام","etaEn":"2–3 days"},
+    {"city":"Aleppo","areas":"السليمانية خلف زجاج غريبه","etaAr":"يومين","etaEn":"2 days"},
+    {"city":"Homs","areas":"الكراج الشمالي","etaAr":"2–3 أيام","etaEn":"2–3 days"}
+  ]'::jsonb)
+on conflict (id) do nothing;
+
+-- ============================================================
 -- 2) أكواد الخصم (الزبون ما يقدر يقرأ الجدول أبداً؛ يتحقق من الكود عبر الدالة تحت)
 -- ============================================================
 create table if not exists public.coupons (
@@ -220,11 +265,13 @@ grant execute on function public.get_secret_products(text) to anon, authenticate
 --    وإلا بيجي نفس رد «المنتج غير موجود» حتى ما ينكشف وجودها أو سعرها.
 -- ============================================================
 drop function if exists public.quote_order(jsonb, text, text);
+drop function if exists public.quote_order(jsonb, text, text, text);
 create or replace function public.quote_order(
-  p_items  jsonb,
-  p_city   text,
-  p_code   text default null,
-  p_secret text default null
+  p_items   jsonb,
+  p_city    text,
+  p_code    text default null,
+  p_secret  text default null,
+  p_company text default null
 )
 returns jsonb
 language plpgsql
@@ -240,6 +287,8 @@ declare
   v_sub     numeric := 0;
   v_prices  jsonb := '[]'::jsonb;
   z         public.shipping_zones%rowtype;
+  sc        public.shipping_companies%rowtype;
+  v_fee     numeric;
   c         public.coupons%rowtype;
   v_code    text := upper(btrim(coalesce(p_code, '')));
   v_disc    numeric := 0;
@@ -289,10 +338,23 @@ begin
     v_prices := v_prices || to_jsonb(v_price);
   end loop;
 
-  -- الشحن حسب المحافظة (لازم تكون موجودة ومفعّلة)
-  select * into z from public.shipping_zones where city = p_city;
-  if not found or not z.enabled then
-    return jsonb_build_object('ok', false, 'error', 'CITY_UNAVAILABLE');
+  -- الشحن: إذا انبعتت شركة شحن، السعر سعرها بشرط تكون مفعّلة وتغطي هالمحافظة.
+  -- وإلا (موقع قديم/ما في شركات) السعر حسب المحافظة (لازم تكون موجودة ومفعّلة).
+  if nullif(btrim(coalesce(p_company, '')), '') is not null then
+    select * into sc from public.shipping_companies where id = p_company;
+    if not found or not sc.enabled
+       or not exists (
+         select 1 from jsonb_array_elements(sc.zones) zz where zz->>'city' = p_city
+       ) then
+      return jsonb_build_object('ok', false, 'error', 'CITY_UNAVAILABLE');
+    end if;
+    v_fee := sc.fee;
+  else
+    select * into z from public.shipping_zones where city = p_city;
+    if not found or not z.enabled then
+      return jsonb_build_object('ok', false, 'error', 'CITY_UNAVAILABLE');
+    end if;
+    v_fee := z.fee;
   end if;
 
   -- كود الخصم (يُطبَّق على المنتجات فقط، بدون الشحن)
@@ -330,9 +392,9 @@ begin
   return jsonb_build_object(
     'ok', true,
     'subtotal', v_sub,
-    'shipping_fee', z.fee,
+    'shipping_fee', v_fee,
     'discount', v_disc,
-    'total', v_sub - v_disc + z.fee,
+    'total', v_sub - v_disc + v_fee,
     'coupon', case when v_code <> '' and v_cerr is null
                    then jsonb_build_object('code', c.code, 'type', c.type, 'value', c.value) end,
     'coupon_error', v_cerr,
@@ -340,8 +402,8 @@ begin
     'unit_prices', v_prices
   );
 end $$;
-revoke all on function public.quote_order(jsonb, text, text, text) from public;
-grant execute on function public.quote_order(jsonb, text, text, text) to anon, authenticated;
+revoke all on function public.quote_order(jsonb, text, text, text, text) from public;
+grant execute on function public.quote_order(jsonb, text, text, text, text) to anon, authenticated;
 
 -- ============================================================
 -- 4) حفظ الطلب: يتحقق من بيانات الزبون، يعيد حساب كل شي بالسيرفر، يعيد بناء بنود الطلب من جدول المنتجات،
@@ -372,6 +434,8 @@ declare
   v_phone   text;
   v_addr    text;
   v_city    text;
+  v_company text;
+  v_cname   text;
   v_phone_key text;
   v_size    text;
   v_fit     text;
@@ -400,6 +464,7 @@ begin
                '[[:cntrl:]]', ' ', 'g'));
   v_addr  := btrim(regexp_replace(coalesce(p_order->'customer'->>'address', ''), '[[:cntrl:]]', ' ', 'g'));
   v_city  := p_order->'customer'->>'city';
+  v_company := nullif(btrim(coalesce(p_order->'shipping'->>'companyId', '')), '');
 
   if v_ref !~ '^[A-Za-z0-9-]{4,32}$' then raise exception 'INVALID_ORDER|REF'; end if;
   if char_length(v_name) < 3 or char_length(v_name) > 80 then raise exception 'INVALID_ORDER|NAME'; end if;
@@ -417,7 +482,10 @@ begin
     perform 1 from public.coupons where code = v_code for update;
   end if;
 
-  q := public.quote_order(p_order->'items', v_city, nullif(v_code, ''), v_secret);
+  q := public.quote_order(p_order->'items', v_city, nullif(v_code, ''), v_secret, v_company);
+  if v_company is not null and (q->>'ok')::boolean then
+    select name_ar into v_cname from public.shipping_companies where id = v_company;
+  end if;
   if not (q->>'ok')::boolean then
     return jsonb_build_object('ok', false, 'error', q->>'error', 'productId', coalesce(q->>'productId', ''));
   end if;
@@ -527,7 +595,9 @@ begin
     'ref',       v_ref,
     'createdAt', to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     'customer',  jsonb_build_object('name', v_name, 'phone', v_phone, 'city', v_city, 'address', v_addr),
-    'shipping',  jsonb_build_object('id', v_city, 'label', v_city, 'fee', (q->>'shipping_fee')::numeric),
+    'shipping',  case when v_company is not null
+                      then jsonb_build_object('id', v_company, 'label', coalesce(v_cname, v_company), 'fee', (q->>'shipping_fee')::numeric, 'companyId', v_company)
+                      else jsonb_build_object('id', v_city, 'label', v_city, 'fee', (q->>'shipping_fee')::numeric) end,
     'items',     v_items,
     'subtotal',  (q->>'subtotal')::numeric,
     'discount',  (q->>'discount')::numeric,

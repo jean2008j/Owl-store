@@ -4,13 +4,23 @@ import { toast } from "sonner";
 import {
   deleteCoupon,
   fetchCoupons,
+  fetchShippingCompanies,
   fetchShippingZones,
   isSupabaseConfigured,
   saveCoupon,
+  saveShippingCompanies,
   saveShippingZones,
   setCouponActive,
 } from "@/lib/db-service";
-import { DEFAULT_SHIPPING_ZONES, money, type Coupon, type ShippingZone } from "@/lib/store/catalog";
+import {
+  CITIES,
+  DEFAULT_SHIPPING_COMPANIES,
+  DEFAULT_SHIPPING_ZONES,
+  money,
+  type Coupon,
+  type ShippingCompany,
+  type ShippingZone,
+} from "@/lib/store/catalog";
 import { CITY_AR } from "@/lib/i18n/content";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +36,12 @@ export function OffersTab() {
   }
   return (
     <div className="flex flex-col gap-12">
+      <Block
+        title="شركات الشحن"
+        hint="كل شركة لها سعر ثابت والمحافظات التي تغطيها. الزبون يختار الشركة في صفحة الدفع. إذا ما في أي شركة مفعّلة، يُستخدم جدول الشحن حسب المحافظة أدناه."
+      >
+        <CompaniesSection />
+      </Block>
       <Block title="الشحن حسب المحافظة" hint="فعّل المحافظات التي توصل إليها وحدّد سعر الشحن لكل محافظة. المحافظة المعطّلة لا تظهر للزبون.">
         <ShippingSection />
       </Block>
@@ -214,6 +230,289 @@ function ShippingSection() {
         <span dir="rtl" className="ms-2 text-xs text-muted">
           {activeCount} من {draft.length} محافظة مفعّلة{dirty ? " · في تغييرات غير محفوظة" : ""}
         </span>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Shipping companies                                                   */
+/* ------------------------------------------------------------------ */
+
+type CompanyDraft = Omit<ShippingCompany, "fee"> & { fee: string };
+
+const toCompanyDrafts = (rows: ShippingCompany[]): CompanyDraft[] => rows.map((c) => ({ ...c, fee: String(c.fee) }));
+
+function CompaniesSection() {
+  const [saved, setSaved] = useState<ShippingCompany[]>([]);
+  const [draft, setDraft] = useState<CompanyDraft[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notSaved, setNotSaved] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    void fetchShippingCompanies().then((rows) => {
+      if (!live) return;
+      // Table empty / missing: show the two default companies and let the admin save them.
+      const base = rows && rows.length ? rows : DEFAULT_SHIPPING_COMPANIES;
+      setNotSaved(!rows || rows.length === 0);
+      setSaved(rows ?? []);
+      setDraft(toCompanyDrafts(base));
+      setLoading(false);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const dirty = useMemo(
+    () => notSaved || JSON.stringify(draft) !== JSON.stringify(toCompanyDrafts(saved)),
+    [draft, saved, notSaved],
+  );
+
+  const patch = (id: string, change: Partial<CompanyDraft>) =>
+    setDraft((rows) => rows.map((row) => (row.id === id ? { ...row, ...change } : row)));
+
+  const patchZone = (id: string, index: number, change: Partial<CompanyDraft["zones"][number]>) =>
+    setDraft((rows) =>
+      rows.map((row) =>
+        row.id === id ? { ...row, zones: row.zones.map((z, i) => (i === index ? { ...z, ...change } : z)) } : row,
+      ),
+    );
+
+  function addCompany() {
+    const id = `c-${crypto.randomUUID().slice(0, 6)}`;
+    setDraft((rows) => [
+      ...rows,
+      { id, nameAr: "", nameEn: "", fee: "", deliveryAr: "", deliveryEn: "", enabled: true, sortOrder: rows.length + 1, zones: [] },
+    ]);
+  }
+
+  function addZone(id: string) {
+    setDraft((rows) =>
+      rows.map((row) => {
+        if (row.id !== id) return row;
+        const free = CITIES.find((city) => !row.zones.some((z) => z.city === city)) ?? CITIES[0];
+        return { ...row, zones: [...row.zones, { city: free, areas: "", etaAr: "", etaEn: "" }] };
+      }),
+    );
+  }
+
+  async function save() {
+    const companies: ShippingCompany[] = [];
+    for (const row of draft) {
+      const label = row.nameAr.trim() || "شركة بدون اسم";
+      if (!row.nameAr.trim()) return toast.error("اكتب اسم الشركة بالعربي.");
+      const fee = Number(row.fee);
+      if (row.fee.trim() === "" || !Number.isFinite(fee) || fee < 0) return toast.error(`سعر الشحن لـ ${label} غير صحيح.`);
+      const seen = new Set<string>();
+      for (const z of row.zones) {
+        if (seen.has(z.city)) return toast.error(`${label}: المحافظة ${CITY_AR[z.city] ?? z.city} مكررة.`);
+        seen.add(z.city);
+      }
+      companies.push({ ...row, fee });
+    }
+    const removed = saved.filter((old) => !companies.some((c) => c.id === old.id)).map((old) => old.id);
+    setSaving(true);
+    const res = await saveShippingCompanies(companies, removed);
+    setSaving(false);
+    if (!res.ok) return toast.error(res.message || "تعذّر حفظ شركات الشحن.");
+    setSaved(companies);
+    setDraft(toCompanyDrafts(companies));
+    setNotSaved(false);
+    toast("تم حفظ شركات الشحن.");
+  }
+
+  if (loading) return <Loader2 className="size-5 animate-spin text-muted" />;
+
+  return (
+    <div className="flex flex-col gap-5">
+      {notSaved ? (
+        <p className="border border-line p-3 text-xs text-muted">
+          هذه الشركات افتراضية ولم تُحفظ في قاعدة البيانات بعد. عدّلها ثم اضغط «حفظ شركات الشحن». (إذا لم ينجح
+          الحفظ، شغّل ملف supabase-offers.sql في Supabase.)
+        </p>
+      ) : null}
+
+      {draft.map((row) => (
+        <div key={row.id} className={cn("rounded-2xl border border-line p-5", !row.enabled && "opacity-70")}>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="block min-w-40 flex-1">
+              <span className="field-label">اسم الشركة (عربي)</span>
+              <input className="field" value={row.nameAr} onChange={(e) => patch(row.id, { nameAr: e.target.value })} />
+            </label>
+            <label className="block min-w-40 flex-1">
+              <span className="field-label">Name (English)</span>
+              <input className="field" dir="ltr" value={row.nameEn} onChange={(e) => patch(row.id, { nameEn: e.target.value })} />
+            </label>
+            <label className="block w-28">
+              <span className="field-label">السعر ($)</span>
+              <input
+                className="field"
+                dir="ltr"
+                inputMode="decimal"
+                value={row.fee}
+                onChange={(e) => patch(row.id, { fee: e.target.value })}
+              />
+            </label>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={row.enabled}
+              onClick={() => patch(row.id, { enabled: !row.enabled })}
+              className={cn(
+                "min-h-11 px-4 font-display text-xs tracking-widest",
+                row.enabled ? "bg-fg text-bg" : "border border-line text-muted",
+              )}
+            >
+              {row.enabled ? "مفعّلة" : "معطّلة"}
+            </button>
+            <button
+              type="button"
+              className="inline-flex size-11 shrink-0 items-center justify-center border border-line text-red-500 hover:bg-red-500/10"
+              aria-label="حذف الشركة"
+              title="حذف الشركة"
+              onClick={() => {
+                if (window.confirm(`حذف شركة ${row.nameAr || "الشحن"}؟`)) {
+                  setDraft((rows) => rows.filter((r) => r.id !== row.id));
+                }
+              }}
+            >
+              <Trash2 className="size-4" />
+            </button>
+          </div>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="field-label">طريقة التسليم (عربي)</span>
+              <input
+                className="field"
+                value={row.deliveryAr}
+                placeholder="إلى باب المنزل / الاستلام من مكتب الشركة"
+                onChange={(e) => patch(row.id, { deliveryAr: e.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="field-label">Delivery method (English)</span>
+              <input
+                className="field"
+                dir="ltr"
+                value={row.deliveryEn}
+                placeholder="Home delivery / Pick-up from the office"
+                onChange={(e) => patch(row.id, { deliveryEn: e.target.value })}
+              />
+            </label>
+          </div>
+
+          <p className="mt-5 text-sm font-bold">المحافظات والمناطق التي تغطيها</p>
+          <div className="mt-2 overflow-x-auto border border-line">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="border-b border-line text-xs text-muted">
+                <tr>
+                  <th className="px-3 py-2 text-start font-normal">المحافظة</th>
+                  <th className="px-3 py-2 text-start font-normal">المناطق / نقطة الاستلام</th>
+                  <th className="px-3 py-2 text-start font-normal">المدة (عربي)</th>
+                  <th className="px-3 py-2 text-start font-normal">Time (English)</th>
+                  <th className="w-12" />
+                </tr>
+              </thead>
+              <tbody>
+                {row.zones.map((z, index) => (
+                  <tr key={index} className="border-b border-line last:border-0">
+                    <td className="px-3 py-2">
+                      <select
+                        className="field min-w-32"
+                        value={z.city}
+                        onChange={(e) => patchZone(row.id, index, { city: e.target.value })}
+                      >
+                        {CITIES.map((city) => (
+                          <option key={city} value={city}>
+                            {CITY_AR[city] ?? city}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        className="field min-w-56"
+                        value={z.areas}
+                        onChange={(e) => patchZone(row.id, index, { areas: e.target.value })}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        className="field min-w-28"
+                        value={z.etaAr}
+                        placeholder="5–10 أيام"
+                        onChange={(e) => patchZone(row.id, index, { etaAr: e.target.value })}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        className="field min-w-28"
+                        dir="ltr"
+                        value={z.etaEn}
+                        placeholder="5–10 days"
+                        onChange={(e) => patchZone(row.id, index, { etaEn: e.target.value })}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <button
+                        type="button"
+                        className="inline-flex size-9 items-center justify-center text-muted hover:text-fg"
+                        aria-label="حذف المحافظة"
+                        onClick={() =>
+                          setDraft((rows) =>
+                            rows.map((r) => (r.id === row.id ? { ...r, zones: r.zones.filter((_, i) => i !== index) } : r)),
+                          )
+                        }
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {row.zones.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-4 text-center text-xs text-muted">
+                      ما في محافظات بعد. هذه الشركة لن تظهر للزبون حتى تضيف محافظة.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+          <button type="button" className="btn-line mt-3 rounded-xl" onClick={() => addZone(row.id)}>
+            <Plus className="size-4" />
+            إضافة محافظة
+          </button>
+        </div>
+      ))}
+
+      <button type="button" className="btn-line self-start rounded-xl" onClick={addCompany}>
+        <Plus className="size-4" />
+        إضافة شركة شحن
+      </button>
+
+      <div dir="ltr" className="flex flex-wrap items-center justify-start gap-2">
+        <button type="button" className="btn-solid" disabled={!dirty || saving} onClick={() => void save()}>
+          {saving ? <Loader2 className="size-4 animate-spin" /> : null}
+          حفظ شركات الشحن
+        </button>
+        <button
+          type="button"
+          className="btn-line"
+          disabled={!dirty || saving}
+          onClick={() => setDraft(toCompanyDrafts(saved.length ? saved : DEFAULT_SHIPPING_COMPANIES))}
+        >
+          إلغاء التغييرات
+        </button>
+        {dirty ? (
+          <span dir="rtl" className="ms-2 text-xs text-muted">
+            في تغييرات غير محفوظة
+          </span>
+        ) : null}
       </div>
     </div>
   );

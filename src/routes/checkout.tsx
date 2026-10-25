@@ -1,4 +1,5 @@
 import {
+  fetchShippingCompanies,
   fetchShippingZones,
   isSupabaseConfigured,
   quoteOrder,
@@ -9,6 +10,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { QrMark } from "@/components/store/qr-mark";
 import {
+  CITIES,
+  DEFAULT_SHIPPING_COMPANIES,
   DEFAULT_SHIPPING_ZONES,
   formatOrderText,
   makeRef,
@@ -16,6 +19,7 @@ import {
   normalizeDigits,
   sizeLeft,
   type Order,
+  type ShippingCompany,
   type ShippingZone,
 } from "@/lib/store/catalog";
 import { fileToJpegDataUrl } from "@/lib/store/images";
@@ -89,14 +93,18 @@ function CheckoutPage() {
 
   // Governorates the admin enabled, with their shipping fee. Falls back to the defaults if the table is not there yet.
   const [zones, setZones] = useState<ShippingZone[]>(DEFAULT_SHIPPING_ZONES);
+  // Shipping companies (Sila, Al-Rafidain…). When there is at least one, the customer picks a company and its flat fee applies.
+  const [companies, setCompanies] = useState<ShippingCompany[]>(isSupabaseConfigured ? [] : DEFAULT_SHIPPING_COMPANIES);
+  const [companyId, setCompanyId] = useState("");
   const [zonesLoaded, setZonesLoaded] = useState(false);
   const [zonesTick, setZonesTick] = useState(0);
   // Reloaded on every step, so a governorate the admin closed while the customer was filling the form is noticed early.
   useEffect(() => {
     let live = true;
-    void fetchShippingZones().then((rows) => {
+    void Promise.all([fetchShippingZones(), fetchShippingCompanies()]).then(([rows, companyRows]) => {
       if (!live) return;
       if (rows) setZones(rows);
+      if (companyRows) setCompanies(companyRows);
       setZonesLoaded(true);
     });
     return () => {
@@ -104,19 +112,37 @@ function CheckoutPage() {
     };
   }, [step, zonesTick]);
   const openZones = zones.filter((item) => item.enabled);
-  const zone = openZones.find((item) => item.city === city) ?? null;
+  const openCompanies = companies.filter((item) => item.enabled);
+  const companyMode = openCompanies.length > 0;
+  const cityOptions: string[] = companyMode
+    ? CITIES.filter((item) => openCompanies.some((c) => c.zones.some((z) => z.city === item)))
+    : openZones.map((item) => item.city);
+  const cityCompanies = companyMode ? openCompanies.filter((c) => c.zones.some((z) => z.city === city)) : [];
+  const company = companyMode
+    ? (cityCompanies.find((c) => c.id === companyId) ?? (cityCompanies.length === 1 ? cityCompanies[0] : null))
+    : null;
+  const companyZone = company?.zones.find((z) => z.city === city) ?? null;
+  const cityOpen = companyMode ? cityCompanies.length > 0 : openZones.some((item) => item.city === city);
+  // The shipping option that is actually chosen (null until a city — and, with companies, a company — is picked).
+  const zone: ShippingZone | null = companyMode
+    ? company && companyZone
+      ? { city, enabled: true, fee: company.fee, etaAr: companyZone.etaAr, etaEn: companyZone.etaEn, sortOrder: 0 }
+      : null
+    : (openZones.find((item) => item.city === city) ?? null);
+  const shipLabel = company ? (isAr ? company.nameAr : company.nameEn || company.nameAr) : zone ? cityLabel(zone.city) : "";
 
   // The chosen governorate is no longer open: say so right away and send the customer back to pick another one.
   function cityClosed() {
     setError(t("checkout.err.cityUnavailable"));
     setCity("");
+    setCompanyId("");
     setStep((value) => Math.min(value, 1));
     setZonesTick((n) => n + 1);
   }
   useEffect(() => {
-    if (zonesLoaded && city && !zone) cityClosed();
+    if (zonesLoaded && city && !cityOpen) cityClosed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zonesLoaded, city, zone]);
+  }, [zonesLoaded, city, cityOpen]);
 
   // The database prices the order (products + shipping + coupon). The browser only displays it.
   const [couponInput, setCouponInput] = useState("");
@@ -146,7 +172,7 @@ function CheckoutPage() {
 
   // applyCoupon already priced the order with the new code: remember it so the refresh below does not ask the server again.
   const skipQuote = useRef<{ sig: string; tick: number } | null>(null);
-  const quoteSig = `${city}|${appliedCode ?? ""}|${quoteKey}|${zone?.fee ?? ""}|${secretAccess}`;
+  const quoteSig = `${city}|${company?.id ?? ""}|${appliedCode ?? ""}|${quoteKey}|${zone?.fee ?? ""}|${secretAccess}`;
 
   useEffect(() => {
     const skip = skipQuote.current;
@@ -159,7 +185,7 @@ function CheckoutPage() {
     let live = true;
     // Small delay: quick changes in the cart or the city send one request, not one per change.
     const timer = setTimeout(() => {
-      void quoteOrder({ items: JSON.parse(quoteKey), city, code: appliedCode, secret: secretAccess }).then((res) => {
+      void quoteOrder({ items: JSON.parse(quoteKey), city, code: appliedCode, secret: secretAccess, company: company?.id }).then((res) => {
         if (!live) return;
         if (!res.ok) {
           if (res.error === "UNAVAILABLE") setQuoteUnavailable(true);
@@ -209,7 +235,7 @@ function CheckoutPage() {
     if (!code) return setCouponMsg(t("checkout.coupon.err.invalid"));
     if (!city) return setCouponMsg(t("checkout.coupon.needCity"));
     setCouponBusy(true);
-    const res = await quoteOrder({ items: quoteItems, city, code, secret: secretAccess });
+    const res = await quoteOrder({ items: quoteItems, city, code, secret: secretAccess, company: company?.id });
     setCouponBusy(false);
     if (!res.ok) {
       if (res.error === "UNAVAILABLE") setQuoteUnavailable(true);
@@ -220,7 +246,7 @@ function CheckoutPage() {
     if (res.couponError) return setCouponMsg(couponError(res.couponError, res.couponMin));
     setCouponInput("");
     skipQuote.current = {
-      sig: `${city}|${res.coupon ?? ""}|${quoteKey}|${zone?.fee ?? ""}|${secretAccess}`,
+      sig: `${city}|${company?.id ?? ""}|${res.coupon ?? ""}|${quoteKey}|${zone?.fee ?? ""}|${secretAccess}`,
       tick: quoteTick,
     };
     setAppliedCode(res.coupon);
@@ -262,7 +288,9 @@ function CheckoutPage() {
       if (normalizeDigits(phone).replace(/\D/g, "").length < 8) return setError(t("checkout.err.phone"));
     }
     if (step === 1) {
-      if (!city || !zone) return setError(t("checkout.err.city"));
+      if (!city || !cityOpen) return setError(t("checkout.err.city"));
+      if (companyMode && !company) return setError(t("checkout.err.company"));
+      if (!zone) return setError(t("checkout.err.city"));
       if (address.trim().length < 8) return setError(t("checkout.err.address"));
     }
     setStep((value) => Math.min(value + 1, 2));
@@ -307,7 +335,7 @@ function CheckoutPage() {
     // Price once more on the server. The customer already transferred the amount on screen,
     // so if anything changed (price, code expiry) we stop and show the new total instead of charging a different one.
     if (isSupabaseConfigured && !quoteUnavailable) {
-      const fresh = await quoteOrder({ items: quoteItems, city, code: appliedCode, secret: secretAccess });
+      const fresh = await quoteOrder({ items: quoteItems, city, code: appliedCode, secret: secretAccess, company: company?.id });
       if (!fresh.ok && fresh.error !== "UNAVAILABLE") {
         // خطأ اتصال مؤقت: ما نكمّل بدون فحص السعر الأخير (الزبون حوّل المبلغ فعلاً). نوقف ونخليه يعيد المحاولة.
         if (fresh.error === "NETWORK") {
@@ -360,7 +388,9 @@ function CheckoutPage() {
         city,
         address: address.trim(),
       },
-      shipping: { id: city, label: city, fee: shippingFee },
+      shipping: company
+        ? { id: company.id, label: company.nameAr, fee: shippingFee, companyId: company.id }
+        : { id: city, label: city, fee: shippingFee },
       items: rows.map((row) => ({
         productId: row.product.id,
         colorId: row.line.colorId,
@@ -507,15 +537,22 @@ function CheckoutPage() {
           <div className="mt-8 flex flex-col gap-4">
             <label>
               <span className="field-label">{t("checkout.city")}</span>
-              <select className="field" value={city} onChange={(event) => setCity(event.target.value)}>
+              <select
+                className="field"
+                value={city}
+                onChange={(event) => {
+                  setCity(event.target.value);
+                  setCompanyId("");
+                }}
+              >
                 <option value="">{t("checkout.select")}</option>
-                {openZones.map((item) => (
-                  <option key={item.city} value={item.city}>
-                    {cityLabel(item.city)}
+                {cityOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {cityLabel(item)}
                   </option>
                 ))}
               </select>
-              {openZones.length === 0 ? (
+              {cityOptions.length === 0 ? (
                 <span className="mt-1 block text-xs text-muted">{t("checkout.noZones")}</span>
               ) : null}
             </label>
@@ -529,7 +566,38 @@ function CheckoutPage() {
                 placeholder={t("checkout.addressPh")}
               />
             </label>
-            {zone ? (
+            {companyMode && city ? (
+              <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("checkout.company")}>
+                <p className="field-label">{t("checkout.company")}</p>
+                {cityCompanies.map((item) => {
+                  const z = item.zones.find((entry) => entry.city === city);
+                  const chosen = company?.id === item.id;
+                  const eta = z ? (isAr ? z.etaAr : z.etaEn || z.etaAr) : "";
+                  const delivery = isAr ? item.deliveryAr : item.deliveryEn || item.deliveryAr;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={chosen}
+                      onClick={() => setCompanyId(item.id)}
+                      className={cn(
+                        "border px-4 py-3 text-start transition-colors",
+                        chosen ? "border-fg bg-fg/5" : "border-line hover:border-fg",
+                      )}
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="font-bold">{isAr ? item.nameAr : item.nameEn || item.nameAr}</span>
+                        <span className="tabular-nums">{money(item.fee)}</span>
+                      </span>
+                      {delivery ? <span className="mt-1 block text-sm">{delivery}</span> : null}
+                      {eta ? <span className="mt-1 block text-xs text-muted">{eta}</span> : null}
+                      {z?.areas ? <span className="mt-1 block text-xs text-muted">{z.areas}</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : zone ? (
               <div className="border border-line px-4 py-3">
                 <p className="field-label">{t("checkout.shipping")}</p>
                 <span className="flex items-center justify-between gap-3 text-sm">
@@ -700,7 +768,7 @@ function CheckoutPage() {
           ) : null}
           <div className="flex justify-between">
             <dt className="text-muted">
-              {zone ? t("checkout.shippingLine", { label: cityLabel(zone.city) }) : t("checkout.shipping")}
+              {zone ? t("checkout.shippingLine", { label: company ? `${shipLabel} · ${cityLabel(zone.city)}` : cityLabel(zone.city) }) : t("checkout.shipping")}
             </dt>
             <dd className="tabular-nums">{zone ? money(shippingFee) : "—"}</dd>
           </div>

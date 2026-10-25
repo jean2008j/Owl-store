@@ -123,7 +123,7 @@ export type Order = {
     city: string;
     address: string;
   };
-  shipping: { id: string; label: string; fee: number };
+  shipping: { id: string; label: string; fee: number; companyId?: string };
   items: OrderItem[];
   subtotal: number;
   discount?: number; // coupon discount on the items (shipping is never discounted)
@@ -187,6 +187,74 @@ export const DEFAULT_SHIPPING_ZONES: ShippingZone[] = [
   zone("Deir ez-Zor", 9, "3–6 أيام", "3–6 days", 12),
   zone("Raqqa", 9, "3–6 أيام", "3–6 days", 13),
   zone("Al-Hasakah", 9, "3–6 أيام", "3–6 days", 14),
+];
+
+/** A governorate a shipping company delivers to (with its own delivery time and pick-up / delivery areas). */
+export type CompanyZone = {
+  city: string; // English governorate name, same list as CITIES
+  areas: string; // areas / pick-up point, free text
+  etaAr: string;
+  etaEn: string;
+};
+
+/** A shipping company (Sila, Al-Rafidain…). Flat fee, covers some governorates. The customer picks one at checkout. */
+export type ShippingCompany = {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  fee: number;
+  deliveryAr: string; // e.g. "إلى باب المنزل" / "الاستلام من مكتب الشركة"
+  deliveryEn: string;
+  enabled: boolean;
+  sortOrder: number;
+  zones: CompanyZone[];
+};
+
+const SILA_ETA = { etaAr: "5–10 أيام", etaEn: "5–10 days" };
+const sila = (city: string, areas: string): CompanyZone => ({ city, areas, ...SILA_ETA });
+const DAMASCUS_AREAS = "الزبداني، القطيفة، برزة، يبرود، الزبلطاني، أشرفية صحنايا";
+
+/** Used in demo mode (no Supabase). Same data the SQL file seeds. */
+export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
+  {
+    id: "sila",
+    nameAr: "صلة",
+    nameEn: "Sila",
+    fee: 4,
+    deliveryAr: "إلى باب المنزل",
+    deliveryEn: "Home delivery",
+    enabled: true,
+    sortOrder: 1,
+    zones: [
+      sila("Damascus", DAMASCUS_AREAS),
+      sila("Rural Damascus", DAMASCUS_AREAS),
+      sila("Deir ez-Zor", "البوكمال، الميادين، مركزي"),
+      sila("Tartus", "حديقة الملجأ، بانياس، دريكيش"),
+      sila("Aleppo", "منبج، مركزي - الأعظمية، اعزاز، الأتارب، الباب، دوار الموت"),
+      sila("Hama", "البارودية، السقيلبية، سلمية، مصياف"),
+      sila("Homs", "كرم اللوز، الحولة، الرستن، تل كلخ"),
+      sila("Daraa", "المجمع الحكومي، انخل"),
+      sila("Idlib", "المتنبي، أريحا، البارة، حارم، خان شيخون، سراقب، سرمدا، معرة النعمان"),
+      sila("Al-Hasakah", "الحسكة والقامشلي: الكلاسة، مركزي - دوار التفاحة"),
+      sila("Raqqa", "سوق الهال القديم، سلوك"),
+      sila("Latakia", "المشروع السابع، جبلة"),
+    ],
+  },
+  {
+    id: "rafidain",
+    nameAr: "الرافدين",
+    nameEn: "Al-Rafidain",
+    fee: 2,
+    deliveryAr: "الاستلام من مكتب الشركة",
+    deliveryEn: "Pick-up from the company office",
+    enabled: true,
+    sortOrder: 2,
+    zones: [
+      { city: "Damascus", areas: "جسر فيكتوريا خلف البريد القديم", etaAr: "2–3 أيام", etaEn: "2–3 days" },
+      { city: "Aleppo", areas: "السليمانية خلف زجاج غريبه", etaAr: "يومين", etaEn: "2 days" },
+      { city: "Homs", areas: "الكراج الشمالي", etaAr: "2–3 أيام", etaEn: "2–3 days" },
+    ],
+  },
 ];
 
 /** A discount code (the customer never reads this table; the database validates it). */
@@ -495,6 +563,7 @@ export function formatOrderText(order: Order) {
     `الاسم: ${order.customer.name}`,
     `الهاتف: ${order.customer.phone}`,
     `العنوان: ${city}${address ? ` (${address})` : ""}`,
+    ...(order.shipping.companyId ? [`شركة الشحن: ${order.shipping.label}`] : []),
     pieces.join("\n\n"),
     `قيمة الفاتورة: ${invoice}`,
     `رقم الفاتورة: ${order.ref}`,

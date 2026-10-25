@@ -163,6 +163,71 @@ export async function saveShippingZones(zones) {
   return error ? { ok: false, message: explainSupabaseError(error.message) } : { ok: true }
 }
 
+// ---------- Shipping companies (Sila, Al-Rafidain…): flat fee + covered governorates, chosen by the customer ----------
+const mapCompany = (r) => ({
+  id: r.id,
+  nameAr: r.name_ar || '',
+  nameEn: r.name_en || '',
+  fee: Number(r.fee) || 0,
+  deliveryAr: r.delivery_ar || '',
+  deliveryEn: r.delivery_en || '',
+  enabled: Boolean(r.enabled),
+  sortOrder: Number(r.sort_order) || 0,
+  zones: (Array.isArray(r.zones) ? r.zones : []).map((z) => ({
+    city: String(z.city || ''),
+    areas: String(z.areas || ''),
+    etaAr: String(z.etaAr || ''),
+    etaEn: String(z.etaEn || ''),
+  })),
+})
+
+// null = الجدول غير موجود/خطأ (الموقع يرجع لشحن المحافظات)، [] = موجود وفاضي
+export async function fetchShippingCompanies() {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('shipping_companies').select('*').order('sort_order', { ascending: true })
+  if (error) {
+    console.error('خطأ في جلب شركات الشحن:', error.message)
+    return null
+  }
+  return (data || []).map(mapCompany)
+}
+
+// يحفظ كل الشركات، ويحذف من قاعدة البيانات أي شركة انحذفت من القائمة (removedIds)
+export async function saveShippingCompanies(companies, removedIds = []) {
+  if (!supabase) return { ok: false, message: 'Supabase غير مُعرّف' }
+  const rows = companies.map((c, i) => ({
+    id: c.id,
+    name_ar: c.nameAr.trim(),
+    name_en: c.nameEn.trim(),
+    fee: Math.max(0, Number(c.fee) || 0),
+    delivery_ar: c.deliveryAr.trim(),
+    delivery_en: c.deliveryEn.trim(),
+    enabled: Boolean(c.enabled),
+    sort_order: i + 1,
+    zones: c.zones.map((z) => ({ city: z.city, areas: z.areas.trim(), etaAr: z.etaAr.trim(), etaEn: z.etaEn.trim() })),
+    updated_at: new Date().toISOString(),
+  }))
+  if (removedIds.length) {
+    const del = await supabase.from('shipping_companies').delete().in('id', removedIds)
+    if (del.error) {
+      console.error('خطأ في حذف شركة الشحن:', del.error.message)
+      return { ok: false, message: explainSupabaseError(del.error.message) }
+    }
+  }
+  if (rows.length) {
+    const { error } = await supabase.from('shipping_companies').upsert(rows, { onConflict: 'id' })
+    if (error) {
+      console.error('خطأ في حفظ شركات الشحن:', error.message)
+      const missing = /shipping_companies.*does not exist|schema cache/i.test(error.message)
+      return {
+        ok: false,
+        message: missing ? 'جدول شركات الشحن غير موجود. شغّل ملف supabase-offers.sql في Supabase.' : explainSupabaseError(error.message),
+      }
+    }
+  }
+  return { ok: true }
+}
+
 // ---------- Coupons (admin only; customers validate through quote_order) ----------
 const mapCoupon = (r) => ({
   id: r.id,
@@ -229,7 +294,7 @@ function explainOffersError(message = '') {
   if (/coupons_percent_max/i.test(message)) return 'نسبة الخصم لا يمكن أن تتجاوز 100%.'
   if (/COUPON_CODE_TOO_SHORT/i.test(message)) return 'يجب أن يكون الكود 6 أحرف أو أرقام على الأقل (الأطول أصعب في التخمين).'
   if (/coupons_dates/i.test(message)) return 'يجب أن يكون تاريخ النهاية بعد تاريخ البداية.'
-  if (/relation .*(coupons|shipping_zones).* does not exist|schema cache/i.test(message)) {
+  if (/relation .*(coupons|shipping_zones|shipping_companies).* does not exist|schema cache/i.test(message)) {
     return 'جداول الشحن والعروض غير موجودة. شغّل ملف supabase-offers.sql في Supabase.'
   }
   return explainSupabaseError(message)
@@ -250,17 +315,20 @@ function isMissingFunctionError(error) {
  * @typedef {{ ok: true, subtotal: number, shippingFee: number, discount: number, total: number,
  *   coupon: string | null, couponError: string | null, couponMin: number }} QuoteOk
  * @typedef {{ ok: false, error: 'UNAVAILABLE' | 'NETWORK' | string, productId?: string }} QuoteFail
- * @param {{ items: { productId: string, size: string, qty: number }[], city: string, code?: string | null, secret?: string | null }} args
+ * @param {{ items: { productId: string, size: string, qty: number }[], city: string, code?: string | null, secret?: string | null, company?: string | null }} args
  * @returns {Promise<QuoteOk | QuoteFail>}
  */
-export async function quoteOrder({ items, city, code, secret }) {
+export async function quoteOrder({ items, city, code, secret, company }) {
   if (!supabase) return { ok: false, error: 'UNAVAILABLE' }
-  const { data, error } = await supabase.rpc('quote_order', {
+  const args = {
     p_items: items,
     p_city: city,
     p_code: code || null,
     p_secret: secret || null, // الرمز السري: لازم لحساب المنتجات السرية فقط
-  })
+  }
+  // شركة الشحن المختارة (السعر سعرها). ما نبعتها إلا إذا انختارت، حتى يضل الموقع شغال قبل تشغيل supabase-offers.sql الجديد.
+  if (company) args.p_company = company
+  const { data, error } = await supabase.rpc('quote_order', args)
   if (error || !data) {
     if (error) console.error('خطأ في حساب الطلب:', error.message)
     // UNAVAILABLE = الدالة فعلاً غير موجودة بقاعدة البيانات (ما انشغّل supabase-offers.sql) → نخفي خانة الكود.
