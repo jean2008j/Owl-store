@@ -386,6 +386,9 @@ function CheckoutPage() {
         address: finalAddress,
       },
       shipping: { id: company?.id ?? city, label: company?.nameAr ?? city, fee: shippingFee, companyId: company?.id },
+      addressParts: pickup
+        ? { area: companyZone?.areas ?? "", detail: "", pickup: true }
+        : { area, detail: address.trim(), pickup: false },
       items: rows.map((row) => ({
         productId: row.product.id,
         colorId: row.line.colorId,

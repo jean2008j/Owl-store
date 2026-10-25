@@ -124,6 +124,8 @@ export type Order = {
     address: string;
   };
   shipping: { id: string; label: string; fee: number; companyId?: string };
+  /** Only used to build the Telegram message (the database keeps the joined `customer.address`). */
+  addressParts?: { area: string; detail: string; pickup: boolean };
   items: OrderItem[];
   subtotal: number;
   discount?: number; // coupon discount on the items (shipping is never discounted)
@@ -512,7 +514,12 @@ const plainNumber = (value: number) => String(Number(value.toFixed(2)));
  */
 export function formatOrderText(order: Order) {
   const city = CITY_AR[order.customer.city] ?? order.customer.city;
-  const address = order.customer.address.replace(/\s*\n+\s*/g, "، ").trim();
+  const parts = order.addressParts;
+  const detail = (parts ? parts.detail : order.customer.address).replace(/\s*\n+\s*/g, "، ").trim();
+  // Sila (home delivery): "المحافظة - المنطقة (العنوان التفصيلي)". Al-Rafidain (office pick-up): no brackets.
+  const addressLine = parts
+    ? `${city}${parts.area ? ` - ${parts.area}` : ""}${!parts.pickup && detail ? ` (${detail})` : ""}`
+    : `${city}${detail ? ` (${detail})` : ""}`;
   const pieces = order.items.map((item) =>
     [
       `المنتج: ${item.name}${item.qty > 1 ? ` × ${item.qty}` : ""}`,
@@ -528,10 +535,10 @@ export function formatOrderText(order: Order) {
   return [
     `الاسم: ${order.customer.name}`,
     `الهاتف: ${order.customer.phone}`,
-    `العنوان: ${city}${address ? ` (${address})` : ""}`,
-    ...(order.shipping.companyId ? [`شركة الشحن: ${order.shipping.label}`] : []),
+    `العنوان: ${addressLine}`,
     pieces.join("\n\n"),
     `قيمة الفاتورة: ${invoice}`,
+    ...(order.shipping.companyId ? [`شركة الشحن: ${order.shipping.label}`] : []),
     `رقم الفاتورة: ${order.ref}`,
   ].join("\n");
 }
