@@ -16,6 +16,27 @@
         if (t && t.theme === "light") document.documentElement.dataset.theme = "light";
       } catch (e) {}
     </script>
+    <script>
+      // Admin app: only the /admin page is installable (the store itself is not).
+      try {
+        if (location.pathname === "/admin" || location.pathname.indexOf("/admin/") === 0) {
+          var m = document.createElement("link");
+          m.rel = "manifest";
+          m.href = "/admin.webmanifest";
+          document.head.appendChild(m);
+          var a = document.createElement("link");
+          a.rel = "apple-touch-icon";
+          a.href = "/admin/apple-touch-icon.png";
+          document.head.appendChild(a);
+          document.title = "Admin — OWL STORE";
+          if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+              navigator.serviceWorker.register("/admin-sw.js", { scope: "/admin" }).catch(function () {});
+            });
+          }
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
