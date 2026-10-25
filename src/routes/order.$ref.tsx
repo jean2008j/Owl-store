@@ -7,7 +7,7 @@ import { useOwl } from "@/lib/store/owl-store";
 
 export const Route = createFileRoute("/order/$ref")({
   head: ({ params }) => ({
-    meta: [{ title: `${params.ref} — OWL STORE` }],
+    meta: [{ title: `${params.ref} — ATHAR & OWL` }],
   }),
   component: OrderPage,
 });

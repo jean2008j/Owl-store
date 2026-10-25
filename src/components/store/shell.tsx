@@ -361,7 +361,7 @@ function CenteredGlyph({ children, className }: { children: string; className?: 
 }
 
 function Announcement({ text }: { text: string }) {
-  const line = text.trim() || "OWL STORE";
+  const line = text.trim() || "ATHAR & OWL";
   return (
     <div className="overflow-hidden bg-black text-white" dir="ltr">
       <div className="owl-marquee flex w-max">
@@ -632,7 +632,7 @@ function Footer() {
             <p className="mt-5 text-sm text-muted">{t("footer.delivery")}</p>
           </div>
           <div dir={dir} className="col-span-2 max-md:border-t max-md:border-line max-md:pt-8 max-md:text-center md:col-span-1">
-            <p className="font-display text-xs tracking-brand text-muted uppercase">OWL STORE</p>
+            <p className="font-display text-xs tracking-brand text-muted uppercase">ATHAR &amp; OWL</p>
             <p className="mt-5 max-w-xs text-sm text-muted max-md:mx-auto">
               The Owl has already seen your future look
               <br />

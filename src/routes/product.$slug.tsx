@@ -6,7 +6,7 @@ import { useOwl } from "@/lib/store/owl-store";
 // Mobile product page: same content as the "View details" card, but as a full page
 // with the whole picture visible. On desktop the card is still used, so we go back to the shop.
 export const Route = createFileRoute("/product/$slug")({
-  head: () => ({ meta: [{ title: "OWL STORE" }] }),
+  head: () => ({ meta: [{ title: "ATHAR & OWL" }] }),
   component: ProductPage,
 });
 

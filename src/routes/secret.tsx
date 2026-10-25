@@ -7,7 +7,7 @@ import { useOwl } from "@/lib/store/owl-store";
 
 export const Route = createFileRoute("/secret")({
   head: () => ({
-    meta: [{ title: "Secret Section — OWL STORE" }],
+    meta: [{ title: "Secret Section — ATHAR & OWL" }],
   }),
   component: SecretPage,
 });
@@ -83,7 +83,7 @@ function SecretPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-14">
-      <p className="font-display text-xs tracking-brand text-muted uppercase">OWL STORE</p>
+      <p className="font-display text-xs tracking-brand text-muted uppercase">ATHAR &amp; OWL</p>
       <div className="mt-2 flex items-end justify-between gap-4">
         <h1 className="font-display text-4xl uppercase leading-none md:text-6xl">
           {ar ? "القسم السري" : "Secret Section"}

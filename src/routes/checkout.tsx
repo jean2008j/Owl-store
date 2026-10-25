@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
-    meta: [{ title: "Checkout — OWL STORE" }],
+    meta: [{ title: "Checkout — ATHAR & OWL" }],
   }),
   component: CheckoutPage,
 });

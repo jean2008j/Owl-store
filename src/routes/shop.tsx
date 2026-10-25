@@ -9,7 +9,7 @@ export const Route = createFileRoute("/shop")({
     cat: isCat(search.cat) ? search.cat : "all",
   }),
   head: () => ({
-    meta: [{ title: "Shop — OWL STORE" }],
+    meta: [{ title: "Shop — ATHAR & OWL" }],
   }),
   component: ShopPage,
 });
@@ -24,7 +24,7 @@ function ShopPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-14">
-      <p className="font-display text-xs tracking-brand text-muted uppercase">OWL STORE</p>
+      <p className="font-display text-xs tracking-brand text-muted uppercase">ATHAR &amp; OWL</p>
       <div className="mt-2 flex items-end justify-between gap-4">
         <h1 className="font-display text-4xl uppercase leading-none md:text-6xl">{catLabel(lang, cat)}</h1>
         <p className="text-sm text-muted tabular-nums">

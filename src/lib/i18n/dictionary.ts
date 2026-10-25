@@ -18,13 +18,13 @@ export const en = {
   "a11y.increase": "Increase quantity",
 
   // titles / meta
-  "title.default": "OWL STORE",
-  "title.home": "OWL STORE — New Drop",
-  "title.shop": "Shop — OWL STORE",
-  "title.admin": "Admin — OWL STORE",
-  "title.checkout": "Checkout — OWL STORE",
+  "title.default": "ATHAR & OWL",
+  "title.home": "ATHAR & OWL — New Drop",
+  "title.shop": "Shop — ATHAR & OWL",
+  "title.admin": "Admin — ATHAR & OWL",
+  "title.checkout": "Checkout — ATHAR & OWL",
   "meta.description":
-    "OWL STORE — heavyweight streetwear. New drops, hoodies, tees, and sets. Sham Cash and local shipping.",
+    "ATHAR & OWL — heavyweight streetwear. New drops, hoodies, tees, and sets. Sham Cash and local shipping.",
 
   // navigation + categories
   "nav.admin": "Admin",
@@ -340,13 +340,13 @@ export const ar = {
   "a11y.decrease": "تقليل الكمية",
   "a11y.increase": "زيادة الكمية",
 
-  "title.default": "OWL STORE",
-  "title.home": "OWL STORE — إطلاق جديد",
-  "title.shop": "المتجر — OWL STORE",
-  "title.admin": "الإدارة — OWL STORE",
-  "title.checkout": "إتمام الطلب — OWL STORE",
+  "title.default": "ATHAR & OWL",
+  "title.home": "ATHAR & OWL — إطلاق جديد",
+  "title.shop": "المتجر — ATHAR & OWL",
+  "title.admin": "الإدارة — ATHAR & OWL",
+  "title.checkout": "إتمام الطلب — ATHAR & OWL",
   "meta.description":
-    "OWL STORE — ملابس شبابية ثقيلة الوزن. تشكيلات جديدة وهوديز وتيشيرتات وأطقم. الدفع عبر شام كاش وشحن محلي.",
+    "ATHAR & OWL — ملابس شبابية ثقيلة الوزن. تشكيلات جديدة وهوديز وتيشيرتات وأطقم. الدفع عبر شام كاش وشحن محلي.",
 
   "nav.admin": "الإدارة",
   "nav.new": "الجديد",

@@ -5,7 +5,7 @@ import { useOwl } from "@/lib/store/owl-store";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
-    meta: [{ title: "Privacy Policy — OWL STORE" }],
+    meta: [{ title: "Privacy Policy — ATHAR & OWL" }],
   }),
   component: Page,
 });
