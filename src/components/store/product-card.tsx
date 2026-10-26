@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   isSoldOut,
   money,
@@ -12,13 +12,21 @@ import { QuickView } from "@/components/store/quick-view";
 export function ProductCard({ product }: { product: Product }) {
   const [hot, setHot] = useState(false);
   const [quick, setQuick] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const coverRef = useRef<HTMLImageElement>(null);
   const navigate = useNavigate();
   const { t, productName } = useI18n();
   const gone = isSoldOut(product);
   const cover = product.images[0] || "/media/night-1.jpg";
   const alt = product.images[1];
   const showAlt = hot && !product.video && Boolean(alt);
+
+  // New cover → blink again; an image that is already cached never blinks.
+  useEffect(() => {
+    const img = coverRef.current;
+    setLoaded(Boolean(img?.complete && img.naturalWidth > 0));
+  }, [cover]);
 
   return (
     <article
@@ -35,7 +43,13 @@ export function ProductCard({ product }: { product: Product }) {
         }
       }}
     >
-      <div className="overflow-hidden rounded-2xl border border-fg/30">
+      <div
+        className={cn(
+          "overflow-hidden rounded-2xl border border-fg/30",
+          !loaded && "owl-skeleton",
+        )}
+        aria-busy={!loaded}
+      >
       <div className="relative">
         <div
           className={cn(
@@ -49,13 +63,17 @@ export function ProductCard({ product }: { product: Product }) {
           }}
         >
           <img
+            ref={coverRef}
             src={cover}
             alt={productName(product)}
             width={900}
             height={1200}
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setLoaded(true)}
             className={cn(
-              "aspect-garment w-full object-cover transition-opacity duration-200",
-              showAlt && "opacity-0",
+              "aspect-garment w-full object-cover transition-opacity duration-300",
+              (showAlt || !loaded) && "opacity-0",
             )}
           />
           {alt ? (

@@ -189,6 +189,27 @@
   }
 }
 
+/* Product card placeholder: the whole card (picture + price) softly blinks until the image has loaded */
+@keyframes owl-skeleton {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.owl-skeleton {
+  animation: owl-skeleton 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owl-skeleton {
+    animation: none;
+  }
+}
+
 /* Hero shows the top 85% of the first screen; the content sheet (rounded top) overlaps the last 2rem */
 .hero-frame {
   height: calc(85svh + 2rem);
