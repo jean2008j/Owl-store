@@ -407,6 +407,48 @@ export async function updateOrderStatusInDatabase(ref, status) {
   return { ok: true }
 }
 
+// ---------- Visitors counter ----------
+// كل متصفح له رقم عشوائي محفوظ عنده، وبيتسجّل مرة وحدة باليوم (supabase-visitors.sql). ما منخزّن أي معلومة شخصية.
+const VISITOR_ID_KEY = 'owl-visitor-id'
+const VISIT_DAY_KEY = 'owl-visit-day'
+
+export async function trackVisit() {
+  if (!supabase) return
+  try {
+    const today = new Date().toDateString()
+    if (localStorage.getItem(VISIT_DAY_KEY) === today) return
+    let id = localStorage.getItem(VISITOR_ID_KEY)
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem(VISITOR_ID_KEY, id)
+    }
+    const { error } = await supabase.rpc('track_visit', { p_visitor: id })
+    if (error) {
+      // الجدول غير موجود (ما انشغّل supabase-visitors.sql) أو خطأ مؤقت: ما منعمل شي ومنعيد المحاولة لاحقاً
+      console.warn('تعذّر تسجيل الزيارة:', error.message)
+      return
+    }
+    localStorage.setItem(VISIT_DAY_KEY, today)
+  } catch {
+    /* الخصوصية/التخزين مقفول: ما منسجّل الزيارة */
+  }
+}
+
+// للأدمن فقط. null = الدالة غير موجودة أو خطأ.
+export async function fetchVisitorStats() {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('visitor_stats')
+  if (error || !data) {
+    if (error) console.error('خطأ في جلب الزوار:', error.message)
+    return null
+  }
+  return {
+    today: Number(data.today) || 0,
+    yesterday: Number(data.yesterday) || 0,
+    month: Number(data.month) || 0,
+  }
+}
+
 // ---------- Admin auth ----------
 export async function adminSignIn(email, password) {
   if (!supabase) return { ok: false, message: 'Supabase غير مُعرّف' }

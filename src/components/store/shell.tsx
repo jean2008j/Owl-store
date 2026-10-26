@@ -1,4 +1,9 @@
-import { fetchPaymentSettings, fetchProductsFromDatabase, fetchSiteContentFromDatabase } from "@/lib/db-service";
+import {
+  fetchPaymentSettings,
+  fetchProductsFromDatabase,
+  fetchSiteContentFromDatabase,
+  trackVisit,
+} from "@/lib/db-service";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   ChevronLeft,
@@ -109,6 +114,12 @@ export function Shell() {
       live = false;
     };
   }, []);
+
+  // Daily visitors counter: once per day per browser, never from the admin pages.
+  useEffect(() => {
+    if (isAdmin) return;
+    void trackVisit();
+  }, [isAdmin]);
 
   // Customers see sold-out sizes without reloading: refresh stock every minute and when the tab returns.
   useEffect(() => {

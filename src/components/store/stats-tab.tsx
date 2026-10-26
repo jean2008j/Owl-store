@@ -7,12 +7,13 @@ import {
   CalendarDays,
   CreditCard,
   DollarSign,
+  Eye,
   RefreshCw,
   TrendingDown,
   TrendingUp,
   Users,
 } from "lucide-react";
-import { fetchOrdersFromDatabase, isSupabaseConfigured } from "@/lib/db-service";
+import { fetchOrdersFromDatabase, fetchVisitorStats, isSupabaseConfigured } from "@/lib/db-service";
 import type { Order, Product } from "@/lib/store/catalog";
 import { useOwl } from "@/lib/store/owl-store";
 import { cn } from "@/lib/utils";
@@ -223,8 +224,8 @@ function StatCard({
   );
 }
 
-function Compare({ now, before }: { now: number; before: number }) {
-  if (now === 0 && before === 0) return <span>لا توجد مبيعات للمقارنة</span>;
+function Compare({ now, before, empty = "لا توجد مبيعات للمقارنة" }: { now: number; before: number; empty?: string }) {
+  if (now === 0 && before === 0) return <span>{empty}</span>;
   if (now > before) {
     return (
       <span className="inline-flex items-center gap-1 font-bold text-emerald-500">
@@ -252,6 +253,8 @@ export function StatsTab() {
   const [loading, setLoading] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [now, setNow] = useState(() => new Date());
+  // null = visitor counter not set up yet (supabase-visitors.sql not run) or could not be read.
+  const [visitors, setVisitors] = useState<{ today: number; yesterday: number; month: number } | null>(null);
 
   // Pull every order from the database, now and then every 30 s (and when the tab regains focus).
   useEffect(() => {
@@ -262,8 +265,9 @@ export function StatsTab() {
         return;
       }
       setLoading(true);
-      const rows = await fetchOrdersFromDatabase();
+      const [rows, visits] = await Promise.all([fetchOrdersFromDatabase(), fetchVisitorStats()]);
       if (!alive) return;
+      if (visits) setVisitors(visits);
       if (rows) {
         useOwl.setState({ orders: rows });
         setUpdatedAt(new Date());
@@ -307,6 +311,9 @@ export function StatsTab() {
           className="btn-line inline-flex items-center gap-2"
           onClick={() => {
             setLoading(true);
+            void fetchVisitorStats().then((visits) => {
+              if (visits) setVisitors(visits);
+            });
             void fetchOrdersFromDatabase().then((rows) => {
               if (rows) {
                 useOwl.setState({ orders: rows });
@@ -326,7 +333,23 @@ export function StatsTab() {
       </div>
 
       {/* Top cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard
+          title="زوار الموقع اليوم"
+          icon={<Eye className="size-5" />}
+          value={visitors ? String(visitors.today) : "—"}
+          sub={visitors ? `/ ${visitors.yesterday} أمس` : undefined}
+          hint={
+            visitors ? (
+              <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+                <Compare now={visitors.today} before={visitors.yesterday} empty="لا زوار للمقارنة" />
+                <span>· هذا الشهر: {visitors.month} زائر</span>
+              </span>
+            ) : (
+              "شغّل ملف supabase-visitors.sql في Supabase حتى يبدأ العدّاد"
+            )
+          }
+        />
         <StatCard
           title="إجمالي المبيعات"
           icon={<BarChart3 className="size-5" />}
