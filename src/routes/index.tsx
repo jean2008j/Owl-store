@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ProductCard } from "@/components/store/product-card";
 import { FeatureSection, HeroSection } from "@/components/store/home-sections";
 import { useI18n } from "@/lib/i18n";
-import { publicProducts } from "@/lib/store/catalog";
 import { useOwl } from "@/lib/store/owl-store";
 
 export const Route = createFileRoute("/")({
@@ -15,8 +14,7 @@ export const Route = createFileRoute("/")({
 function Home() {
   const lang = useOwl((state) => state.lang);
   const content = useOwl((state) => state.settings.content[state.lang]);
-  const allProducts = useOwl((state) => state.products);
-  const products = publicProducts(allProducts);
+  const products = useOwl((state) => state.products);
   const { t, dir } = useI18n();
 
   return (

@@ -944,7 +944,7 @@ function ProductsTab() {
   const [formKey, setFormKey] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
 
-  // after logging in, the list must also contain the secret-section products
+  // after logging in, the list is refreshed from the database
   useEffect(() => {
     void refreshProducts();
   }, []);
@@ -1613,39 +1613,6 @@ function ProductForm({ initial, onDone }: { initial: Product | null; onDone: () 
         </div>
       </div>
 
-      {/* Where the product appears */}
-      <div className="mt-6 rounded-xl border border-line p-4">
-        <p className="field-label">مكان ظهور المنتج</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {(
-            [
-              { secret: false, title: "المنتجات العادية", hint: "يظهر للجميع: الرئيسية والمتجر والبحث." },
-              { secret: true, title: "القسم السري", hint: "مقفل برمز سري، ويظهر فقط لمن يُدخل الرمز." },
-            ] as const
-          ).map((option) => {
-            const active = Boolean(draft.secret) === option.secret;
-            return (
-              <button
-                key={option.title}
-                type="button"
-                aria-pressed={active}
-                onClick={() => patch({ secret: option.secret })}
-                className={cn(
-                  "rounded-xl border p-4 text-start transition-colors",
-                  active ? "border-fg bg-fg text-bg" : "border-line text-muted hover:border-fg/60",
-                )}
-              >
-                <span className="flex items-center gap-2 font-bold">
-                  {option.secret ? <Lock className="size-4" /> : null}
-                  {option.title}
-                </span>
-                <span className="mt-1 block text-xs opacity-80">{option.hint}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Save */}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button
@@ -1764,11 +1731,6 @@ function InventoryList({
                   <span className="inline-flex items-center gap-2">
                     {product.soldOut ? <Lock className="size-4 text-amber-500" /> : null}
                     {product.name}
-                    {product.secret ? (
-                      <span className="rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[11px] text-amber-500">
-                        سري
-                      </span>
-                    ) : null}
                   </span>
                 </td>
                 <td className="px-3 py-3 text-sm tabular-nums text-muted">

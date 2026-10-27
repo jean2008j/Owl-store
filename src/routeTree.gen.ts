@@ -14,7 +14,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as StoryRouteImport } from './routes/story'
-import { Route as SecretRouteImport } from './routes/secret'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OrderRefRouteImport } from './routes/order.$ref'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
@@ -44,11 +43,6 @@ const StoryRoute = StoryRouteImport.update({
   path: '/story',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SecretRoute = SecretRouteImport.update({
-  id: '/secret',
-  path: '/secret',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -71,7 +65,6 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/shop': typeof ShopRoute
   '/story': typeof StoryRoute
-  '/secret': typeof SecretRoute
   '/privacy': typeof PrivacyRoute
   '/order/$ref': typeof OrderRefRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -82,7 +75,6 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/shop': typeof ShopRoute
   '/story': typeof StoryRoute
-  '/secret': typeof SecretRoute
   '/privacy': typeof PrivacyRoute
   '/order/$ref': typeof OrderRefRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -94,7 +86,6 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/shop': typeof ShopRoute
   '/story': typeof StoryRoute
-  '/secret': typeof SecretRoute
   '/privacy': typeof PrivacyRoute
   '/order/$ref': typeof OrderRefRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -102,9 +93,9 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/admin' | '/checkout' | '/shop' | '/story' | '/secret' | '/privacy' | '/order/$ref' | '/product/$slug'
+    '/' | '/admin' | '/checkout' | '/shop' | '/story' | '/privacy' | '/order/$ref' | '/product/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/checkout' | '/shop' | '/story' | '/secret' | '/privacy' | '/order/$ref' | '/product/$slug'
+  to: '/' | '/admin' | '/checkout' | '/shop' | '/story' | '/privacy' | '/order/$ref' | '/product/$slug'
   id:
     | '__root__'
     | '/'
@@ -112,7 +103,6 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/shop'
     | '/story'
-    | '/secret'
     | '/privacy'
     | '/order/$ref'
     | '/product/$slug'
@@ -124,7 +114,6 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ShopRoute: typeof ShopRoute
   StoryRoute: typeof StoryRoute
-  SecretRoute: typeof SecretRoute
   PrivacyRoute: typeof PrivacyRoute
   OrderRefRoute: typeof OrderRefRoute
   ProductSlugRoute: typeof ProductSlugRoute
@@ -167,13 +156,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/secret': {
-      id: '/secret'
-      path: '/secret'
-      fullPath: '/secret'
-      preLoaderRoute: typeof SecretRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -204,7 +186,6 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ShopRoute: ShopRoute,
   StoryRoute: StoryRoute,
-  SecretRoute: SecretRoute,
   PrivacyRoute: PrivacyRoute,
   OrderRefRoute: OrderRefRoute,
   ProductSlugRoute: ProductSlugRoute,

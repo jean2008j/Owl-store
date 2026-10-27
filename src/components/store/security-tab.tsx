@@ -3,14 +3,14 @@ import { Eye, EyeOff, KeyRound, Loader2, Pencil, Plus, RefreshCw, Trash2, UserPl
 import { toast } from "sonner";
 import {
   adminUsersCall,
-  fetchSecretCode,
+  fetchStoreGateSettings,
   isSupabaseConfigured,
-  saveSecretCode,
+  saveStoreGateSettings,
 } from "@/lib/db-service";
 import { useOwl } from "@/lib/store/owl-store";
 import { cn } from "@/lib/utils";
 
-/** "الأمان" tab: payments (passed in), secret-section code, and the list of admin users. */
+/** "الأمان" tab: payments (passed in), the customers' store password, and the list of admin users. */
 export function SecurityTab({ payments }: { payments: ReactNode }) {
   return (
     <div className="flex flex-col gap-12">
@@ -18,10 +18,10 @@ export function SecurityTab({ payments }: { payments: ReactNode }) {
         {payments}
       </Block>
       <Block
-        title="رمز القسم السري"
-        hint="الزبون يحتاج هذا الرمز حتى يفتح «القسم السري» ويشوف المنتجات المقفولة."
+        title="كلمة سر المتجر"
+        hint="الزبون بيشوف صفحة كلمة سر أول ما يفتح الموقع. فعّلها أو أوقفها أو غيّرها من هون بأي وقت."
       >
-        <SecretCodeSection />
+        <StorePasswordSection />
       </Block>
       <Block
         title="مستخدمو الإدارة"
@@ -46,22 +46,31 @@ function Block({ title, hint, children }: { title: string; hint?: string; childr
 }
 
 /* ------------------------------------------------------------------ */
-/* Secret section code                                                  */
+/* Store password (customers' gate)                                     */
 /* ------------------------------------------------------------------ */
 
-function SecretCodeSection() {
-  const localCode = useOwl((state) => state.settings.secretCode);
+function StorePasswordSection() {
+  const localPassword = useOwl((state) => state.settings.storePassword);
+  const localEnabled = useOwl((state) => state.settings.storePasswordEnabled);
   const update = useOwl((state) => state.updateSettings);
-  const [code, setCode] = useState(isSupabaseConfigured ? "" : localCode);
+  const [password, setPassword] = useState(isSupabaseConfigured ? "" : localPassword);
+  const [enabled, setEnabled] = useState(isSupabaseConfigured ? false : localEnabled);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [shown, setShown] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     let alive = true;
-    void fetchSecretCode().then((value) => {
+    void fetchStoreGateSettings().then((row) => {
       if (!alive) return;
-      if (value != null) setCode(value);
+      if (row) {
+        setPassword(row.password ?? "");
+        setEnabled(Boolean(row.enabled));
+      } else {
+        setLoadFailed(true);
+      }
       setLoading(false);
     });
     return () => {
@@ -69,44 +78,97 @@ function SecretCodeSection() {
     };
   }, []);
 
-  async function save() {
-    const next = code.trim();
-    if (next.length < 3) {
-      toast("استخدم 3 أحرف أو أرقام على الأقل.");
+  async function save(nextEnabled: boolean) {
+    const next = password.trim();
+    if (nextEnabled && next.length < 3) {
+      toast("اكتب كلمة سر من 3 أحرف أو أرقام على الأقل قبل التفعيل.");
       return;
     }
+    setSaving(true);
     if (isSupabaseConfigured) {
-      setSaving(true);
-      const res = await saveSecretCode(next);
-      setSaving(false);
+      const res = await saveStoreGateSettings({ enabled: nextEnabled, password: next });
       if (!res.ok) {
-        toast.error(`ما انحفظ الرمز: ${res.message}`);
+        setSaving(false);
+        toast.error(`ما انحفظت كلمة سر المتجر: ${res.message}`);
         return;
       }
     }
-    update({ secretCode: next });
-    toast("تم تحديث رمز القسم السري.");
+    update({ storePassword: next, storePasswordEnabled: nextEnabled });
+    setPassword(next);
+    setEnabled(nextEnabled);
+    setSaving(false);
+    toast(nextEnabled ? "كلمة سر المتجر مفعّلة." : "تم إيقاف كلمة سر المتجر، الزبائن بيدخلوا بدونها.");
   }
 
   return (
     <div className="grid max-w-xl gap-4">
+      {loadFailed ? (
+        <p className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-500">
+          تعذّر قراءة الإعداد. إذا لسا ما شغّلت ملف supabase-store-gate.sql بـ Supabase، شغّله مرة وحدة ثم حدّث الصفحة.
+        </p>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-line p-4">
+        <div>
+          <p className="font-bold">{enabled ? "كلمة السر مفعّلة" : "كلمة السر موقوفة"}</p>
+          <p className="mt-1 text-xs text-muted">
+            {enabled ? "الزبائن لازم يكتبوا كلمة السر ليفتحوا المتجر." : "الزبائن بيفتحوا المتجر مباشرة بدون كلمة سر."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          disabled={saving || loading || loadFailed}
+          onClick={() => void save(!enabled)}
+          className={cn(
+            "relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50",
+            enabled ? "bg-emerald-500" : "bg-line",
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-1 size-5 rounded-full bg-white transition-all",
+              enabled ? "start-6" : "start-1",
+            )}
+          />
+        </button>
+      </div>
+
       <label className="block">
-        <span className="field-label">رمز القسم السري</span>
-        <input
-          className="field"
-          dir="ltr"
-          value={code}
-          disabled={loading}
-          placeholder={loading ? "جاري التحميل..." : "مثال: 4821"}
-          onChange={(event) => setCode(event.target.value)}
-        />
+        <span className="field-label">كلمة سر المتجر</span>
+        <div className="relative">
+          <input
+            className="field pe-11"
+            dir="ltr"
+            type={shown ? "text" : "password"}
+            autoComplete="off"
+            value={password}
+            disabled={loading || loadFailed}
+            placeholder={loading ? "جاري التحميل..." : "اكتب كلمة السر"}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <button
+            type="button"
+            className="absolute inset-y-0 end-3 text-muted hover:text-fg"
+            aria-label={shown ? "إخفاء كلمة السر" : "إظهار كلمة السر"}
+            onClick={() => setShown((v) => !v)}
+          >
+            {shown ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         <span className="mt-1 block text-xs text-muted">
-          غيّر الرمز بأي وقت — الزبائن اللي فتحوا القسم قبل بيحتاجوا يدخلوا الرمز الجديد.
+          عند تغيير الكلمة، أي زبون بيحتاج يكتب الكلمة الجديدة بزيارته التالية.
         </span>
       </label>
-      <button type="button" className="btn-solid self-start" disabled={saving || loading} onClick={() => void save()}>
+      <button
+        type="button"
+        className="btn-solid self-start"
+        disabled={saving || loading || loadFailed}
+        onClick={() => void save(enabled)}
+      >
         {saving ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
-        حفظ الرمز
+        حفظ كلمة السر
       </button>
     </div>
   );

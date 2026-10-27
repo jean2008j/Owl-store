@@ -24,6 +24,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import { ProductCard } from "@/components/store/product-card";
+import { StoreGate, useStoreGate } from "@/components/store/store-gate";
 import {
   CATALOG_VERSION,
   cloneSeed,
@@ -81,6 +82,8 @@ export function Shell() {
             telegramBotToken: state.settings.telegramBotToken,
             telegramChatId: state.settings.telegramChatId,
             adminPin: state.settings.adminPin || defaultSettings.adminPin,
+            storePassword: state.settings.storePassword,
+            storePasswordEnabled: state.settings.storePasswordEnabled,
           },
           catalogVersion: CATALOG_VERSION,
           hydrated: true,
@@ -166,6 +169,17 @@ export function Shell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [setCartOpen, setSearchOpen]);
+
+  // Store password: customers must type it before seeing the shop (the admin pages are never gated).
+  const gate = useStoreGate(isAdmin);
+  if (!isAdmin && gate.status !== "open") {
+    return (
+      <>
+        {gate.status === "locked" ? <StoreGate onUnlock={gate.unlock} /> : <div className="min-h-screen" />}
+        <Toaster theme={theme} position="bottom-center" />
+      </>
+    );
+  }
 
   return (
     <>
@@ -467,7 +481,7 @@ function MobileCategoryBar({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-/** Desktop nav: categories split 5 + 5 over rows 1 and 2, Our Story + Privacy + Secret always on row 3. */
+/** Desktop nav: categories split 5 + 5 over rows 1 and 2, Our Story + Privacy always on row 3. */
 function NavLinks() {
   const lang = useOwl((state) => state.lang);
   const href = useRouterState({ select: (state) => state.location.href });
@@ -505,9 +519,6 @@ function NavLinks() {
         <Link to="/privacy" className={linkClass(href.startsWith("/privacy"))}>
           {ar ? "سياسة الخصوصية" : "Privacy Policy"}
         </Link>
-        <Link to="/secret" className={linkClass(href.startsWith("/secret"))}>
-          {ar ? "القسم السري" : "Secret Section"}
-        </Link>
       </div>
     </div>
   );
@@ -543,9 +554,6 @@ function MobileMenu({ open, onNavigate }: { open: boolean; onNavigate: () => voi
           </Link>
           <Link to="/privacy" onClick={onNavigate} className={item}>
             {lang === "ar" ? "سياسة الخصوصية" : "Privacy Policy"}
-          </Link>
-          <Link to="/secret" onClick={onNavigate} className={item}>
-            {lang === "ar" ? "القسم السري" : "Secret Section"}
           </Link>
         </nav>
       </div>
@@ -634,11 +642,6 @@ function Footer() {
                   {lang === "ar" ? "سياسة الخصوصية" : "Privacy Policy"}
                 </Link>
               </li>
-              <li>
-                <Link to="/secret" className="hover:opacity-60">
-                  {lang === "ar" ? "القسم السري" : "Secret Section"}
-                </Link>
-              </li>
             </ul>
             <p className="mt-5 text-sm text-muted">{t("footer.delivery")}</p>
           </div>
@@ -683,7 +686,7 @@ function Footer() {
 function SearchPanel() {
   const open = useOwl((state) => state.searchOpen);
   const setSearchOpen = useOwl((state) => state.setSearchOpen);
-  const products = useOwl((state) => state.products).filter((product) => !product.secret);
+  const products = useOwl((state) => state.products);
   const { t, productName } = useI18n();
   const [query, setQuery] = useState("");
 

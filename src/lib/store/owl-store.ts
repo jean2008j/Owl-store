@@ -69,8 +69,6 @@ type OwlState = {
   cart: CartLine[];
   orders: Order[];
   adminUnlocked: boolean;
-  secretUnlocked: boolean; // in memory only: the customer must enter the code on every visit
-  secretAccess: string;
   catalogVersion: number;
   hydrated: boolean;
   cartOpen: boolean;
@@ -89,8 +87,6 @@ type OwlState = {
   clearCart: () => void;
   placeOrder: (order: Order) => void;
   setOrderStatus: (ref: string, status: Order["status"]) => Promise<{ ok: boolean; message?: string }>;
-  unlockSecret: (code: string, rows?: Product[]) => void;
-  lockSecret: () => void;
   unlockAdmin: () => void;
   lockAdmin: () => void;
 };
@@ -146,8 +142,6 @@ export const useOwl = create<OwlState>()(
       cart: [],
       orders: [],
       adminUnlocked: false,
-      secretUnlocked: false,
-      secretAccess: "",
       catalogVersion: CATALOG_VERSION,
       hydrated: false,
       cartOpen: false,
@@ -191,7 +185,8 @@ export const useOwl = create<OwlState>()(
             telegramBotToken: state.settings.telegramBotToken,
             telegramChatId: state.settings.telegramChatId,
             adminPin: state.settings.adminPin,
-            secretCode: state.settings.secretCode,
+            storePassword: state.settings.storePassword,
+            storePasswordEnabled: state.settings.storePasswordEnabled,
           },
           catalogVersion: CATALOG_VERSION,
         })),
@@ -272,29 +267,6 @@ export const useOwl = create<OwlState>()(
         }));
         return { ok: true };
       },
-      unlockSecret: (code, rows) =>
-        set((state) => {
-          if (!rows) return { secretUnlocked: true, secretAccess: code };
-          const ids = new Set(rows.map((row) => row.id));
-          return {
-            secretUnlocked: true,
-            secretAccess: code,
-            products: [...state.products.filter((product) => !ids.has(product.id)), ...rows],
-          };
-        }),
-      lockSecret: () =>
-        set((state) => {
-          // Pieces from the secret section must not stay in the bag (or in memory with Supabase) once it is locked.
-          const secretIds = new Set(state.products.filter((product) => product.secret).map((product) => product.id));
-          return {
-            secretUnlocked: false,
-            secretAccess: "",
-            cart: state.cart.filter((line) => !secretIds.has(line.productId)),
-            products: isSupabaseConfigured
-              ? state.products.filter((product) => !product.secret)
-              : state.products,
-          };
-        }),
       unlockAdmin: () => set({ adminUnlocked: true }),
       lockAdmin: () => set({ adminUnlocked: false }),
     }),
@@ -322,16 +294,8 @@ export const useOwl = create<OwlState>()(
         lang: state.lang,
         theme: state.theme,
         settings: state.settings,
-        // with Supabase the secret products are never kept on the visitor's device
-        products: isSupabaseConfigured
-          ? state.products.filter((product) => !product.secret)
-          : state.products,
-        // with Supabase the secret pieces are not kept on the device, so they are not kept in the saved bag either
-        cart: isSupabaseConfigured
-          ? state.cart.filter(
-              (line) => !state.products.find((product) => product.id === line.productId)?.secret,
-            )
-          : state.cart,
+        products: state.products,
+        cart: state.cart,
         // the receipt photo (big base64) goes to Telegram only; keeping it here fills the browser storage
         orders: state.orders.map((order) => ({ ...order, receiptDataUrl: "" })),
         adminUnlocked: state.adminUnlocked,
