@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProductCard } from "@/components/store/product-card";
-import { catLabel, isCat, matchesCat, publicProducts, type Cat } from "@/lib/store/catalog";
+import { catLabel, isCat, matchesCat, type Cat } from "@/lib/store/catalog";
 import { useI18n } from "@/lib/i18n";
 import { useOwl } from "@/lib/store/owl-store";
 
@@ -18,9 +18,7 @@ function ShopPage() {
   const { cat } = Route.useSearch();
   const lang = useOwl((state) => state.lang);
   const { t, plural } = useI18n();
-  const products = publicProducts(useOwl((state) => state.products)).filter((product) =>
-    matchesCat(product, cat),
-  );
+  const products = useOwl((state) => state.products).filter((product) => matchesCat(product, cat));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-14">

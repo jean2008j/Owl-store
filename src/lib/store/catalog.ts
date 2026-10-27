@@ -45,7 +45,6 @@ export type Product = {
   /** Stock per colour and size: { [colorId]: { XS: 2, S: 4, … } }. Missing on old products → `stock` is used. */
   colorStock?: Record<string, Record<Size, number>>;
   soldOut: boolean;
-  secret?: boolean; // true → only shown inside the locked "secret section"
 };
 
 export type CartLine = {
@@ -100,7 +99,8 @@ export type Settings = {
   telegramBotToken: string;
   telegramChatId: string;
   adminPin: string;
-  secretCode: string; // code that opens the secret section (local/demo mode)
+  storePassword: string; // customers' store password (local/demo mode only; with Supabase it lives in the database)
+  storePasswordEnabled: boolean; // false → no password screen
 };
 
 export type OrderItem = {
@@ -318,11 +318,9 @@ export const defaultSettings: Settings = {
   telegramBotToken: "",
   telegramChatId: "",
   adminPin: "OWL-2026",
-  secretCode: "1234",
+  storePassword: "",
+  storePasswordEnabled: false,
 };
-
-/** Products shown to everyone (the secret-section ones are left out). */
-export const publicProducts = (list: Product[]) => list.filter((product) => !product.secret);
 
 export const seedProducts: Product[] = [
   {

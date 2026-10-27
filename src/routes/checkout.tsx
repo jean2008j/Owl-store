@@ -150,8 +150,6 @@ function CheckoutPage() {
   const [quoteUnavailable, setQuoteUnavailable] = useState(false);
   const [quoteNetError, setQuoteNetError] = useState(false);
   const [quoteTick, setQuoteTick] = useState(0);
-  // Only needed when the cart has a piece from the secret section: the database refuses those without the code.
-  const secretAccess = useOwl((state) => state.secretAccess);
   const showCoupon = isSupabaseConfigured && !quoteUnavailable;
 
   const quoteItems = rows.map((row) => ({
@@ -168,7 +166,7 @@ function CheckoutPage() {
 
   // applyCoupon already priced the order with the new code: remember it so the refresh below does not ask the server again.
   const skipQuote = useRef<{ sig: string; tick: number } | null>(null);
-  const quoteSig = `${city}|${company?.id ?? ""}|${appliedCode ?? ""}|${quoteKey}|${zone?.fee ?? ""}|${secretAccess}`;
+  const quoteSig = `${city}|${company?.id ?? ""}|${appliedCode ?? ""}|${quoteKey}|${zone?.fee ?? ""}`;
 
   useEffect(() => {
     const skip = skipQuote.current;
@@ -181,7 +179,7 @@ function CheckoutPage() {
     let live = true;
     // Small delay: quick changes in the cart or the city send one request, not one per change.
     const timer = setTimeout(() => {
-      void quoteOrder({ items: JSON.parse(quoteKey), city, code: appliedCode, secret: secretAccess, company: company?.id }).then((res) => {
+      void quoteOrder({ items: JSON.parse(quoteKey), city, code: appliedCode, company: company?.id }).then((res) => {
         if (!live) return;
         if (!res.ok) {
           if (res.error === "UNAVAILABLE") setQuoteUnavailable(true);
@@ -231,7 +229,7 @@ function CheckoutPage() {
     if (!code) return setCouponMsg(t("checkout.coupon.err.invalid"));
     if (!city) return setCouponMsg(t("checkout.coupon.needCity"));
     setCouponBusy(true);
-    const res = await quoteOrder({ items: quoteItems, city, code, secret: secretAccess, company: company?.id });
+    const res = await quoteOrder({ items: quoteItems, city, code, company: company?.id });
     setCouponBusy(false);
     if (!res.ok) {
       if (res.error === "UNAVAILABLE") setQuoteUnavailable(true);
@@ -242,7 +240,7 @@ function CheckoutPage() {
     if (res.couponError) return setCouponMsg(couponError(res.couponError, res.couponMin));
     setCouponInput("");
     skipQuote.current = {
-      sig: `${city}|${company?.id ?? ""}|${res.coupon ?? ""}|${quoteKey}|${zone?.fee ?? ""}|${secretAccess}`,
+      sig: `${city}|${company?.id ?? ""}|${res.coupon ?? ""}|${quoteKey}|${zone?.fee ?? ""}`,
       tick: quoteTick,
     };
     setAppliedCode(res.coupon);
@@ -332,7 +330,7 @@ function CheckoutPage() {
     // Price once more on the server. The customer already transferred the amount on screen,
     // so if anything changed (price, code expiry) we stop and show the new total instead of charging a different one.
     if (isSupabaseConfigured && !quoteUnavailable) {
-      const fresh = await quoteOrder({ items: quoteItems, city, code: appliedCode, secret: secretAccess, company: company?.id });
+      const fresh = await quoteOrder({ items: quoteItems, city, code: appliedCode, company: company?.id });
       if (!fresh.ok && fresh.error !== "UNAVAILABLE") {
         // خطأ اتصال مؤقت: ما نكمّل بدون فحص السعر الأخير (الزبون حوّل المبلغ فعلاً). نوقف ونخليه يعيد المحاولة.
         if (fresh.error === "NETWORK") {
@@ -420,7 +418,7 @@ function CheckoutPage() {
     };
 
     try {
-      const saved = (await submitOrderToDatabase(order, { secretCode: secretAccess })) as
+      const saved = (await submitOrderToDatabase(order)) as
         | { subtotal: number; shippingFee: number; discount: number; total: number; coupon: string | null }
         | true
         | null;

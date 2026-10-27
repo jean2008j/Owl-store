@@ -14,12 +14,9 @@ function ProductPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const hydrated = useOwl((state) => state.hydrated);
-  const secretUnlocked = useOwl((state) => state.secretUnlocked);
-  const found = useOwl((state) =>
+  const product = useOwl((state) =>
     state.products.find((item) => item.id === slug || item.slug === slug),
   );
-  // a secret product has no public page until its section was opened
-  const product = found && (!found.secret || secretUnlocked) ? found : undefined;
 
   const goBack = () => {
     if (window.history.length > 1) window.history.back();

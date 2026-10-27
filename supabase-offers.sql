@@ -1,7 +1,7 @@
 -- OWL STORE: شركات الشحن + أكواد الخصم (الحساب كله بقاعدة البيانات)
 -- شغّله مرة وحدة: Supabase > SQL Editor > New query > الصق > Run  (آمن لو شغّلته أكثر من مرة)
 -- الترتيب: supabase-setup.sql ← supabase-fix.sql ← supabase-security.sql ← هذا الملف.
--- هذا الملف هو المكان الوحيد اللي بتتعرّف فيه: place_order و quote_order و get_secret_products (لا تعرّفهم بمكان تاني).
+-- هذا الملف هو المكان الوحيد اللي بتتعرّف فيه: place_order و quote_order (لا تعرّفهم بمكان تاني).
 
 -- ============================================================
 -- 1) شركات الشحن (صلة، الرافدين...): كل شركة بسعر ثابت ومناطق تغطيها. الزبون يختار الشركة بصفحة الدفع.
@@ -213,47 +213,16 @@ create trigger orders_on_status_change before update of status on public.orders
   for each row execute function public.orders_on_status_change();
 
 -- ============================================================
--- 2.7) فتح القسم السري (انتقلت هون من supabase-security.sql حتى ما ترجع النسخة القديمة عند إعادة تشغيله)
--- ============================================================
-create or replace function public.get_secret_products(p_code text)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  ok boolean;
-  result jsonb;
-begin
-  if public.rate_limited('secret', 10, interval '10 minutes') then
-    return jsonb_build_object('ok', false, 'products', '[]'::jsonb, 'error', 'RATE_LIMITED');
-  end if;
-  select exists (select 1 from public.secret_section where id = 'main' and code = p_code) into ok;
-  if not ok then
-    perform public.rate_hit('secret');
-    return jsonb_build_object('ok', false, 'products', '[]'::jsonb);
-  end if;
-  select coalesce(jsonb_agg(data order by created_at desc), '[]'::jsonb)
-    into result
-    from public.products
-   where data is not null and coalesce((data->>'secret')::boolean, false) = true;
-  return jsonb_build_object('ok', true, 'products', result);
-end $$;
-grant execute on function public.get_secret_products(text) to anon, authenticated;
-
--- ============================================================
 -- 3) حساب الطلب بالكامل بقاعدة البيانات: أسعار المنتجات + الشحن + الخصم
 --    الأسعار تؤخذ من جدول المنتجات، مو من المتصفح، فما أحد يقدر يتلاعب بالمبلغ.
---    المنتجات السرية ما بتنحسب إلا إذا انبعت الرمز السري الصحيح (p_secret)،
---    وإلا بيجي نفس رد «المنتج غير موجود» حتى ما ينكشف وجودها أو سعرها.
 -- ============================================================
 drop function if exists public.quote_order(jsonb, text, text);
 drop function if exists public.quote_order(jsonb, text, text, text);
+drop function if exists public.quote_order(jsonb, text, text, text, text);
 create or replace function public.quote_order(
   p_items   jsonb,
   p_city    text,
   p_code    text default null,
-  p_secret  text default null,
   p_company text default null
 )
 returns jsonb
@@ -265,8 +234,6 @@ declare
   it        jsonb;
   v_qty     int;
   v_price   numeric;
-  v_is_secret boolean;
-  v_secret_ok boolean := null;
   v_sub     numeric := 0;
   v_prices  jsonb := '[]'::jsonb;
   sc        public.shipping_companies%rowtype;
@@ -293,27 +260,12 @@ begin
     if v_qty < 1 or v_qty > 100 then
       return jsonb_build_object('ok', false, 'error', 'BAD_QTY');
     end if;
-    select (data->>'price')::numeric, coalesce((data->>'secret')::boolean, false)
-      into v_price, v_is_secret
+    select (data->>'price')::numeric
+      into v_price
       from public.products
      where pid = it->>'productId' and data is not null;
     if not found or v_price is null then
       return jsonb_build_object('ok', false, 'error', 'PRODUCT_NOT_FOUND', 'productId', it->>'productId');
-    end if;
-
-    if v_is_secret then
-      if v_secret_ok is null then
-        if public.rate_limited('secret', 10, interval '10 minutes') then
-          v_secret_ok := false;
-        else
-          v_secret_ok := coalesce(p_secret, '') <> ''
-            and exists (select 1 from public.secret_section where id = 'main' and code = p_secret);
-          if not v_secret_ok then perform public.rate_hit('secret'); end if;
-        end if;
-      end if;
-      if not v_secret_ok then
-        return jsonb_build_object('ok', false, 'error', 'PRODUCT_NOT_FOUND', 'productId', it->>'productId');
-      end if;
     end if;
 
     v_sub    := v_sub + v_price * v_qty;
@@ -375,8 +327,8 @@ begin
     'unit_prices', v_prices
   );
 end $$;
-revoke all on function public.quote_order(jsonb, text, text, text, text) from public;
-grant execute on function public.quote_order(jsonb, text, text, text, text) to anon, authenticated;
+revoke all on function public.quote_order(jsonb, text, text, text) from public;
+grant execute on function public.quote_order(jsonb, text, text, text) to anon, authenticated;
 
 -- ============================================================
 -- 4) حفظ الطلب: يتحقق من بيانات الزبون، يعيد حساب كل شي بالسيرفر، يعيد بناء بنود الطلب من جدول المنتجات،
@@ -401,7 +353,6 @@ declare
   pd        jsonb;
   q         jsonb;
   v_code    text;
-  v_secret  text;
   v_ref     text;
   v_name    text;
   v_phone   text;
@@ -448,14 +399,13 @@ begin
   if char_length(v_addr) < 8 or char_length(v_addr) > 300 then raise exception 'INVALID_ORDER|ADDRESS'; end if;
 
   v_code   := upper(btrim(coalesce(p_order->>'coupon', '')));
-  v_secret := p_order->>'secretCode';
 
   -- قفل صف الكود حتى لا يستخدمه شخصان معاً بعد آخر استخدام (وحتى يشوف الطلب الثاني الطلب الأول)
   if v_code <> '' then
     perform 1 from public.coupons where code = v_code for update;
   end if;
 
-  q := public.quote_order(p_order->'items', v_city, nullif(v_code, ''), v_secret, v_company);
+  q := public.quote_order(p_order->'items', v_city, nullif(v_code, ''), v_company);
   if (q->>'ok')::boolean then
     select name_ar into v_cname from public.shipping_companies where id = v_company;
   end if;

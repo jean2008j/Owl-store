@@ -280,16 +280,15 @@ function isMissingFunctionError(error) {
  * @typedef {{ ok: true, subtotal: number, shippingFee: number, discount: number, total: number,
  *   coupon: string | null, couponError: string | null, couponMin: number }} QuoteOk
  * @typedef {{ ok: false, error: 'UNAVAILABLE' | 'NETWORK' | string, productId?: string }} QuoteFail
- * @param {{ items: { productId: string, size: string, qty: number }[], city: string, code?: string | null, secret?: string | null, company?: string | null }} args
+ * @param {{ items: { productId: string, size: string, qty: number }[], city: string, code?: string | null, company?: string | null }} args
  * @returns {Promise<QuoteOk | QuoteFail>}
  */
-export async function quoteOrder({ items, city, code, secret, company }) {
+export async function quoteOrder({ items, city, code, company }) {
   if (!supabase) return { ok: false, error: 'UNAVAILABLE' }
   const args = {
     p_items: items,
     p_city: city,
     p_code: code || null,
-    p_secret: secret || null, // الرمز السري: لازم لحساب المنتجات السرية فقط
   }
   // شركة الشحن المختارة (السعر سعرها). ما نبعتها إلا إذا انختارت، حتى يضل الموقع شغال قبل تشغيل supabase-offers.sql الجديد.
   if (company) args.p_company = company
@@ -316,12 +315,10 @@ export async function quoteOrder({ items, city, code, secret, company }) {
 // ---------- Orders ----------
 // الزبون (بدون تسجيل دخول) يحفظ الطلب عبر دالة place_order بالـ SQL.
 // الدالة تعيد حساب الأسعار والشحن والخصم بنفسها، وتنقّص المخزون، وترجّع الأرقام النهائية.
-export async function submitOrderToDatabase(order, { secretCode } = {}) {
+export async function submitOrderToDatabase(order) {
   if (!supabase) return null
   const { receiptDataUrl, ...clean } = order // صورة الإيصال تروح للتلغرام فقط
-  // secretCode: يلزم فقط إذا بالسلة منتج من القسم السري. السيرفر ما بيخزّنه مع الطلب.
-  const payload = secretCode ? { ...clean, secretCode } : clean
-  const { data, error } = await supabase.rpc('place_order', { p_order: payload })
+  const { data, error } = await supabase.rpc('place_order', { p_order: clean })
   if (error) {
     console.error('خطأ في حفظ الطلب:', error.message)
     const msg = error.message || ''
@@ -466,34 +463,49 @@ export async function adminSignOut() {
   if (supabase) await supabase.auth.signOut()
 }
 
-// ---------- Secret section ----------
-// الرمز محفوظ بجدول مقفول؛ الزبون يفتح القسم عبر دالة SQL تتحقق من الرمز وترجع المنتجات السرية فقط إذا صح
-export async function fetchSecretProducts(code) {
-  if (!supabase) return { ok: false, products: [], message: 'Supabase غير مُعرّف' }
-  const { data, error } = await supabase.rpc('get_secret_products', { p_code: code })
-  if (error) {
-    console.error('خطأ في فتح القسم السري:', error.message)
-    return { ok: false, products: [], message: explainSupabaseError(error.message) }
-  }
-  if (data?.error === 'RATE_LIMITED') {
-    return { ok: false, products: [], message: 'محاولات كثيرة. حاول مجددًا بعد قليل.' }
-  }
-  return { ok: Boolean(data?.ok), products: data?.products ?? [] }
-}
+// ---------- Store password (بوابة كلمة سر المتجر للزبائن) ----------
+// الكلمة محفوظة بجدول مقفول (الأدمن فقط يقرأ ويعدّل). الزبون بيعرف فقط هل البوابة مفعّلة،
+// وبيتحقق من الكلمة عبر دالة SQL ما بترجّع الكلمة نفسها.
 
-export async function fetchSecretCode() {
+/** @returns {Promise<boolean | null>} true = البوابة مفعّلة، false = موقوفة، null = تعذّر معرفة الحالة (نفتح المتجر) */
+export async function fetchStoreGateEnabled() {
   if (!supabase) return null
-  const { data, error } = await supabase.from('secret_section').select('code').eq('id', 'main').maybeSingle()
-  if (error) {
-    console.error('خطأ في جلب رمز القسم السري:', error.message)
+  const { data, error } = await supabase.rpc('get_store_gate')
+  if (error || !data) {
+    if (error) console.error('خطأ في جلب حالة كلمة سر المتجر:', error.message)
     return null
   }
-  return data?.code ?? null
+  return Boolean(data.enabled)
 }
 
-export async function saveSecretCode(code) {
+/** @returns {Promise<{ ok: boolean, message?: string }>} */
+export async function checkStorePassword(code) {
   if (!supabase) return { ok: false, message: 'Supabase غير مُعرّف' }
-  const { error } = await supabase.from('secret_section').upsert({ id: 'main', code }, { onConflict: 'id' })
+  const { data, error } = await supabase.rpc('check_store_gate', { p_code: code })
+  if (error) {
+    console.error('خطأ في التحقق من كلمة سر المتجر:', error.message)
+    return { ok: false, message: explainSupabaseError(error.message) }
+  }
+  if (data?.error === 'RATE_LIMITED') return { ok: false, rateLimited: true }
+  return { ok: Boolean(data?.ok) }
+}
+
+/** للأدمن: الإعداد الحالي { enabled, password } أو null */
+export async function fetchStoreGateSettings() {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('store_gate').select('enabled,password').eq('id', 'main').maybeSingle()
+  if (error) {
+    console.error('خطأ في جلب إعداد كلمة سر المتجر:', error.message)
+    return null
+  }
+  return data ?? { enabled: false, password: '' }
+}
+
+export async function saveStoreGateSettings({ enabled, password }) {
+  if (!supabase) return { ok: false, message: 'Supabase غير مُعرّف' }
+  const { error } = await supabase
+    .from('store_gate')
+    .upsert({ id: 'main', enabled: Boolean(enabled), password, updated_at: new Date().toISOString() }, { onConflict: 'id' })
   return error ? { ok: false, message: explainSupabaseError(error.message) } : { ok: true }
 }
 
