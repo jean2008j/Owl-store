@@ -380,7 +380,7 @@ function AdminUsersSection() {
                       <p dir="ltr" className="truncate text-start font-bold">
                         {user.email}
                         {user.isSelf ? (
-                          <span dir="rtl" className="ms-2 text-xs font-normal text-emerald-500">
+                          <span dir="rtl" className="ms-2 text-xs font-medium text-emerald-500">
                             (أنت)
                           </span>
                         ) : null}

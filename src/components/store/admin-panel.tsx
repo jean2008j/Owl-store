@@ -1485,7 +1485,7 @@ function ProductForm({ initial, onDone }: { initial: Product | null; onDone: () 
                     <img src={item.src} alt="" className="h-full w-full object-cover" />
                   )}
                   {index === 0 ? (
-                    <span className="absolute start-1 bottom-1 rounded bg-bg/80 px-1.5 py-0.5 text-[10px] font-bold">
+                    <span className="absolute start-1 bottom-1 rounded bg-bg/80 px-1.5 py-0.5 text-[11px] font-bold">
                       الرئيسية
                     </span>
                   ) : null}
@@ -1753,7 +1753,7 @@ function InventoryList({
                           key={size}
                           title={breakdown}
                           className={cn(
-                            "rounded-md border border-line px-1.5 py-0.5 font-mono text-[11px] tabular-nums",
+                            "rounded-md border border-line px-1.5 py-0.5 font-mono text-[12px] tabular-nums",
                             n > 0 ? "text-emerald-500" : "text-red-500",
                           )}
                         >

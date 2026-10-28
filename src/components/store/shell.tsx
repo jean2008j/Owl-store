@@ -222,7 +222,7 @@ export function Shell() {
                 <div className="flex min-w-0 flex-1 justify-center">
                   <Link
                     to="/"
-                    className="-translate-y-[2px] font-display text-[17px] leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-black uppercase"
+                    className="-translate-y-[2px] font-display text-[18px] leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-black uppercase"
                     onClick={() => setMenuOpen(false)}
                   >
                     Athar &amp; Owl
@@ -293,9 +293,9 @@ function HeaderControls({ count, onOpen }: { count: number; onOpen: () => void }
         onClick={() => setLang(lang === "ar" ? "en" : "ar")}
       >
         {lang === "ar" ? (
-          <CenteredGlyph className="font-sans text-[12px] font-bold tracking-normal">EN</CenteredGlyph>
+          <CenteredGlyph className="font-sans text-[13px] font-bold tracking-normal">EN</CenteredGlyph>
         ) : (
-          <CenteredGlyph className="font-sans text-[17px] font-semibold">ع</CenteredGlyph>
+          <CenteredGlyph className="font-sans text-[18px] font-semibold">ع</CenteredGlyph>
         )}
       </button>
       <button
@@ -329,7 +329,7 @@ function HeaderControls({ count, onOpen }: { count: number; onOpen: () => void }
       >
         <ShoppingBag className="size-5" />
         {count > 0 ? (
-          <span className="absolute top-0 right-0 min-w-4 rounded-full bg-black px-1 text-center text-[10px] leading-4 font-semibold tabular-nums text-white lg:bg-white lg:text-black">
+          <span className="absolute top-0 right-0 min-w-4 rounded-full bg-black px-1 text-center text-[11px] leading-4 font-semibold tabular-nums text-white lg:bg-white lg:text-black">
             {count}
           </span>
         ) : null}
@@ -463,7 +463,7 @@ function MobileCategoryBar({ onNavigate }: { onNavigate: () => void }) {
               onClick={onNavigate}
               className={cn(
                 "shrink-0 px-3.5 py-2 font-sans font-semibold whitespace-nowrap text-black uppercase",
-                ar ? "text-[13px]" : "text-[11.5px] tracking-wide",
+                ar ? "text-[14px]" : "text-[12.5px] tracking-wide",
                 active && "underline decoration-2 underline-offset-[6px]",
               )}
             >
@@ -529,7 +529,7 @@ function MobileMenu({ open, onNavigate }: { open: boolean; onNavigate: () => voi
   const lang = useOwl((state) => state.lang);
   const cats = [{ cat: "all" as const }, ...NAV];
   const item =
-    "block py-3 font-sans text-[15px] font-medium tracking-[0.08em] text-black uppercase transition-opacity active:opacity-60";
+    "block py-3 font-sans text-[16px] font-medium tracking-[0.08em] text-black uppercase transition-opacity active:opacity-60";
   return (
     <div
       className={cn(
