@@ -251,10 +251,10 @@ function CompaniesSection() {
             <table className="w-full min-w-[760px] text-sm">
               <thead className="border-b border-line text-xs text-muted">
                 <tr>
-                  <th className="px-3 py-2 text-start font-normal">المحافظة</th>
-                  <th className="px-3 py-2 text-start font-normal">{row.pickup ? "عنوان المكتب" : "المناطق"}</th>
-                  <th className="px-3 py-2 text-start font-normal">المدة (عربي)</th>
-                  <th className="px-3 py-2 text-start font-normal">Time (English)</th>
+                  <th className="px-3 py-2 text-start font-medium">المحافظة</th>
+                  <th className="px-3 py-2 text-start font-medium">{row.pickup ? "عنوان المكتب" : "المناطق"}</th>
+                  <th className="px-3 py-2 text-start font-medium">المدة (عربي)</th>
+                  <th className="px-3 py-2 text-start font-medium">Time (English)</th>
                   <th className="w-12" />
                 </tr>
               </thead>
