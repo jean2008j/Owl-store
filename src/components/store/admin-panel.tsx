@@ -1927,7 +1927,7 @@ function OrderCard({
       >
         <X className="size-6" strokeWidth={2.5} />
       </button>
-      {order.status === "confirmed" ? (
+      {order.status === "confirmed" || order.status === "fulfilled" ? (
         <button
           type="button"
           onClick={() => {
