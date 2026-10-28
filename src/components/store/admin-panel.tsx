@@ -12,6 +12,7 @@ import {
   Pencil,
   Pipette,
   Plus,
+  Printer,
   RotateCcw,
   Search,
   Smartphone,
@@ -49,6 +50,7 @@ import {
   type Tag,
 } from "@/lib/store/catalog";
 import { fileToJpegDataUrl } from "@/lib/store/images";
+import { printOrderInvoice } from "@/lib/store/invoice";
 import { translateArToEn } from "@/lib/translate";
 import { ensureAllEnglish, ensureProductEnglish } from "@/lib/store/auto-english";
 import { uploadOrKeep, uploadProductMedia } from "@/lib/store/media";
@@ -1925,6 +1927,19 @@ function OrderCard({
       >
         <X className="size-6" strokeWidth={2.5} />
       </button>
+      {order.status === "confirmed" ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (!printOrderInvoice(order)) toast.error("تعذّرت الطباعة.");
+          }}
+          title="طباعة الفاتورة"
+          aria-label="طباعة الفاتورة"
+          className="absolute left-3 top-3 flex size-10 items-center justify-center border border-line hover:bg-fg hover:text-bg"
+        >
+          <Printer className="size-5" />
+        </button>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-display text-lg tracking-widest">{order.ref}</p>
