@@ -13,92 +13,98 @@ export function buildInvoiceHtml(order: Order) {
   const city = CITY_AR[order.customer.city] ?? order.customer.city;
   const address = (order.customer.address || "").replace(/\s*\n+\s*/g, "، ").trim();
   const addressLine = `${city}${address ? ` (${address})` : ""}`;
-  const date = new Date(order.createdAt).toLocaleString("ar-SY", { dateStyle: "medium", timeStyle: "short" });
+  const date = new Date(order.createdAt).toLocaleString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const usd = (value: number) => `<span class="usd">$${plain(value)}</span>`;
 
   const rows = order.items
     .map(
       (item, index) => `
       <tr>
-        <td class="n">${index + 1}</td>
-        <td>${esc(item.name)}</td>
-        <td>${esc(item.color)}</td>
-        <td>${esc(String(item.size))}</td>
-        <td class="n">${item.qty}</td>
-        <td class="n">${plain(item.unitPrice)}</td>
-        <td class="n">${plain(item.unitPrice * item.qty)}</td>
+        <td class="c n">${index + 1}</td>
+        <td class="c">${esc(item.name)}</td>
+        <td class="c">${esc(item.color)}</td>
+        <td class="c">${esc(String(item.size))}</td>
+        <td class="c n">${item.qty}</td>
+        <td class="c n">${usd(item.unitPrice)}</td>
+        <td class="c n">${usd(item.unitPrice * item.qty)}</td>
       </tr>`,
     )
     .join("");
 
   const hasDiscount = !!order.discount && order.discount > 0;
-  const formula =
-    plain(order.subtotal) +
-    (hasDiscount ? ` − ${plain(order.discount as number)}` : "") +
-    ` + (${plain(order.shipping.fee)}) = ${plain(order.total)}`;
+  const infoRows = [
+    ["الاسم", esc(order.customer.name)],
+    ["الهاتف", `<span class="ltr">${esc(order.customer.phone)}</span>`],
+    ["العنوان", esc(addressLine)],
+    ...(order.shipping.companyId || order.shipping.label ? [["شركة الشحن", esc(order.shipping.label)]] : []),
+  ]
+    .map(([label, value]) => `<tr><th class="label">${label}</th><td>${value}</td></tr>`)
+    .join("");
 
   return `<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
-<title>فاتورة ${esc(order.ref)}</title>
+<title>${esc(order.ref)}</title>
 <style>
-  @page { size: A4; margin: 14mm; }
+  /* margin 0 hides the browser's own date / title / address header and footer; the invoice prints its own */
+  @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
-  body { margin: 0; color: #111; background: #fff; font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; line-height: 1.6; }
+  body { margin: 0; padding: 12mm 14mm; color: #111; background: #fff; font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; line-height: 1.6; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; margin-bottom: 6px; }
+  .top .ref { font-weight: 700; direction: ltr; unicode-bidi: embed; }
+  .top .date { direction: ltr; unicode-bidi: embed; }
   .head { text-align: center; border-bottom: 3px double #111; padding-bottom: 14px; margin-bottom: 18px; }
   .brand { font-family: "Oswald", "Arial Narrow", Arial, sans-serif; font-size: 34px; font-weight: 700; letter-spacing: 0.22em; direction: ltr; }
-  .sub { margin-top: 2px; font-size: 13px; letter-spacing: 0.1em; color: #444; }
-  .meta { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-  .meta b { font-size: 16px; direction: ltr; unicode-bidi: embed; }
-  .box { border: 1px solid #111; padding: 10px 14px; margin-bottom: 16px; }
-  .box h3 { margin: 0 0 6px; font-size: 13px; letter-spacing: 0.06em; color: #444; }
-  .line { display: flex; gap: 8px; padding: 2px 0; }
-  .line span:first-child { min-width: 90px; color: #444; }
-  .line span:last-child { font-weight: 700; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  th, td { border: 1px solid #111; padding: 7px 8px; text-align: right; }
-  th { background: #111; color: #fff; font-size: 13px; }
-  td.n, th.n { text-align: center; width: 1%; white-space: nowrap; }
-  .totals { margin-right: auto; margin-left: 0; width: 60%; border: 1px solid #111; padding: 8px 14px; }
-  .totals .line span:first-child { min-width: 130px; }
-  .grand { border-top: 2px solid #111; margin-top: 6px; padding-top: 6px; font-size: 17px; }
-  .formula { margin-top: 8px; text-align: center; color: #444; direction: ltr; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #111; padding: 7px 10px; text-align: right; }
+  th.label { width: 28%; background: #f2f2f2; font-weight: 700; }
+  .products th { background: #111; color: #fff; font-size: 13px; }
+  .c { text-align: center; }
+  td.n, th.n { white-space: nowrap; }
+  .products .n { width: 1%; }
+  .ltr { direction: ltr; unicode-bidi: embed; }
+  .usd { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  .totals { margin-top: 14px; }
+  .totals td:last-child { text-align: center; font-weight: 700; }
+  .totals tr.grand th, .totals tr.grand td { font-size: 16px; border-top: 2px solid #111; }
   .foot { margin-top: 28px; text-align: center; color: #444; font-size: 12px; border-top: 1px solid #999; padding-top: 10px; }
 </style>
 </head>
 <body>
+  <div class="top">
+    <div class="ref">${esc(order.ref)}</div>
+    <div class="date">${esc(date)}</div>
+  </div>
   <div class="head">
     <div class="brand">${STORE_NAME}</div>
-    <div class="sub">فاتورة طلب</div>
   </div>
 
-  <div class="meta">
-    <div>رقم الفاتورة: <b>${esc(order.ref)}</b></div>
-    <div>التاريخ: <b>${esc(date)}</b></div>
-  </div>
+  <table class="info">
+    <tbody>${infoRows}</tbody>
+  </table>
 
-  <div class="box">
-    <h3>معلومات الزبون</h3>
-    <div class="line"><span>الاسم:</span><span>${esc(order.customer.name)}</span></div>
-    <div class="line"><span>الهاتف:</span><span style="direction:ltr;unicode-bidi:embed">${esc(order.customer.phone)}</span></div>
-    <div class="line"><span>العنوان:</span><span>${esc(addressLine)}</span></div>
-    ${order.shipping.companyId || order.shipping.label ? `<div class="line"><span>شركة الشحن:</span><span>${esc(order.shipping.label)}</span></div>` : ""}
-  </div>
-
-  <table>
+  <table class="products">
     <thead>
-      <tr><th class="n">#</th><th>المنتج</th><th>اللون</th><th>القياس</th><th class="n">الكمية</th><th class="n">السعر</th><th class="n">المجموع</th></tr>
+      <tr><th class="c n">#</th><th class="c">المنتج</th><th class="c">اللون</th><th class="c">القياس</th><th class="c n">الكمية</th><th class="c n">السعر</th><th class="c n">المجموع</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
 
-  <div class="totals">
-    <div class="line"><span>مجموع المنتجات:</span><span>${plain(order.subtotal)}</span></div>
-    ${hasDiscount ? `<div class="line"><span>الخصم${order.coupon ? ` (${esc(order.coupon)})` : ""}:</span><span>− ${plain(order.discount as number)}</span></div>` : ""}
-    <div class="line"><span>الشحن:</span><span>${plain(order.shipping.fee)}</span></div>
-    <div class="line grand"><span>قيمة الفاتورة:</span><span>${plain(order.total)}</span></div>
-    <div class="formula">${esc(formula)}</div>
-  </div>
+  <table class="totals">
+    <tbody>
+      <tr><th class="label">مجموع المنتجات</th><td>${usd(order.subtotal)}</td></tr>
+      ${hasDiscount ? `<tr><th class="label">الخصم${order.coupon ? ` (${esc(order.coupon)})` : ""}</th><td><span class="usd">− $${plain(order.discount as number)}</span></td></tr>` : ""}
+      <tr><th class="label">الشحن</th><td>${usd(order.shipping.fee)}</td></tr>
+      <tr class="grand"><th class="label">قيمة الفاتورة</th><td>${usd(order.total)}</td></tr>
+    </tbody>
+  </table>
 
   <div class="foot">شكرًا لتسوقكم من ${STORE_NAME}</div>
 </body>
