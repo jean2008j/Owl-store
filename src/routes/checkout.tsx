@@ -83,6 +83,7 @@ function CheckoutPage() {
   const [area, setArea] = useState("");
   const [receipt, setReceipt] = useState("");
   const [receiptName, setReceiptName] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   // One order reference per checkout visit, and a guard against a second tap while an order is being sent.
@@ -273,6 +274,21 @@ function CheckoutPage() {
         </Link>
       </div>
     );
+  }
+
+  function handleReceiptFile(file: File | undefined) {
+    if (!file) return;
+    void fileToJpegDataUrl(file)
+      .then((url) => {
+        setReceipt(url);
+        setReceiptName(file.name);
+        setError("");
+      })
+      .catch((cause: unknown) => {
+        setReceipt("");
+        setReceiptName("");
+        setError(cause instanceof Error ? cause.message : t("checkout.err.read"));
+      });
   }
 
   function next() {
@@ -720,32 +736,79 @@ function CheckoutPage() {
                 </button>
               </div>
             </div>
-            <label className="mt-6 block">
-              <span className="field-label">{t("checkout.receipt")}</span>
+            <p className="field-label mt-6">{t("checkout.receipt")}</p>
+            <label
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDragOver(false);
+                handleReceiptFile(event.dataTransfer.files?.[0]);
+              }}
+              className={cn(
+                "group relative flex min-h-64 w-full cursor-pointer flex-col items-center justify-center gap-4 border-2 border-dashed px-6 py-10 text-center transition-colors focus-within:border-fg",
+                dragOver ? "border-fg bg-fg/10" : receipt ? "border-fg bg-fg/5" : "border-line bg-surface hover:border-fg hover:bg-fg/5",
+              )}
+            >
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                className="field"
+                className="sr-only"
                 onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  void fileToJpegDataUrl(file)
-                    .then((url) => {
-                      setReceipt(url);
-                      setReceiptName(file.name);
-                      setError("");
-                    })
-                    .catch((cause: unknown) => {
-                      setReceipt("");
-                      setError(cause instanceof Error ? cause.message : t("checkout.err.read"));
-                    });
+                  handleReceiptFile(event.target.files?.[0]);
+                  // lets the customer pick the same file again after removing it
+                  event.target.value = "";
                 }}
               />
+              {receipt ? (
+                <>
+                  <img
+                    src={receipt}
+                    alt={t("checkout.receiptAlt")}
+                    className="max-h-72 w-auto max-w-full border border-line object-contain"
+                  />
+                  <span className="flex items-center gap-2 font-display text-sm tracking-widest uppercase">
+                    <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                      <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {t("checkout.receiptDone")}
+                  </span>
+                  {receiptName ? <span className="max-w-full truncate text-xs text-muted">{receiptName}</span> : null}
+                  <span className="text-xs text-muted underline">{t("checkout.receiptChange")}</span>
+                </>
+              ) : (
+                <>
+                  <span className="flex size-20 items-center justify-center rounded-full border-2 border-fg transition-transform group-hover:scale-105">
+                    <svg viewBox="0 0 24 24" className="size-10" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                      <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="font-display text-xl leading-tight tracking-widest uppercase sm:text-2xl">
+                    {t("checkout.receiptTitle")}
+                  </span>
+                  <span className="text-sm text-muted">{t("checkout.receiptHint")}</span>
+                  <span className="border border-line px-3 py-1 text-xs tracking-widest text-muted">
+                    {t("checkout.receiptFormats")}
+                  </span>
+                </>
+              )}
             </label>
             {receipt ? (
-              <img src={receipt} alt={t("checkout.receiptAlt")} className="mt-4 max-h-64 border border-line object-contain" />
+              <button
+                type="button"
+                className="btn-line mt-3"
+                onClick={() => {
+                  setReceipt("");
+                  setReceiptName("");
+                }}
+              >
+                {t("checkout.receiptRemove")}
+              </button>
             ) : null}
-            {receiptName ? <p className="mt-2 text-xs text-muted">{receiptName}</p> : null}
           </div>
         ) : null}
 
