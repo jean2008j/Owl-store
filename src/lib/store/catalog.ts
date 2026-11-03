@@ -238,7 +238,7 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
       rafidain("Damascus", "جسر فيكتوريا خلف البريد القديم"),
       rafidain("Aleppo", "السليمانية خلف زجاج غريبه"),
       rafidain("Homs", "الكراج الشمالي"),
-      rafidain("Al-Hasakah", "كراج تل حجز"),
+      { city: "Al-Hasakah", areas: "كراج تل حجز", etaAr: "يوم واحد", etaEn: "1 day" },
     ],
   },
   // Qamishli: the shop is there, so no shipping company. Two plain options.

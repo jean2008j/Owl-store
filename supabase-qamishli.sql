@@ -3,7 +3,7 @@
 -- الترتيب: بعد supabase-offers.sql.
 --
 -- النتيجة:
---   الحسكة   : شركة صلة (توصيل لباب المنزل، 4$، 2–7 أيام) أو شركة الرافدين (استلام من مكتبهم بكراج تل حجز، 2$، 2–3 أيام).
+--   الحسكة   : شركة صلة (توصيل لباب المنزل، 4$، 2–7 أيام) أو شركة الرافدين (استلام من مكتبهم بكراج تل حجز، 2$، يوم واحد).
 --   القامشلي : استلام من المحل مباشرة (بدون أجرة) أو توصيل لباب المنزل (2$). بدون أي شركة شحن.
 
 -- 1) عمود «ليست شركة شحن» (الاستلام من المحل / التوصيل المباشر ما بيظهرلهم كلمة «شركة»)
@@ -12,7 +12,7 @@ alter table public.shipping_companies
 
 -- 2) الرافدين: مكتبهم بالحسكة بكراج تل حجز (الاستلام من المكتب متل باقي المحافظات)
 update public.shipping_companies
-   set zones = zones || '[{"city":"Al-Hasakah","areas":"كراج تل حجز","etaAr":"2–3 أيام","etaEn":"2–3 days"}]'::jsonb,
+   set zones = zones || '[{"city":"Al-Hasakah","areas":"كراج تل حجز","etaAr":"يوم واحد","etaEn":"1 day"}]'::jsonb,
        updated_at = now()
  where id = 'rafidain'
    and not exists (
@@ -31,10 +31,14 @@ values
    '[{"city":"Qamishli","areas":"","etaAr":"","etaEn":""}]'::jsonb)
 on conflict (id) do nothing;
 
--- 4) مدة التوصيل ثابتة لكل المحافظات: الرافدين 2–3 أيام، وصلة 2–7 أيام
+-- 4) مدة التوصيل ثابتة: الرافدين 2–3 أيام (والحسكة يوم واحد)، وصلة 2–7 أيام
 update public.shipping_companies c
    set zones = (
-         select coalesce(jsonb_agg(z || jsonb_build_object('etaAr', '2–3 أيام', 'etaEn', '2–3 days')), '[]'::jsonb)
+         select coalesce(jsonb_agg(
+                case when z->>'city' = 'Al-Hasakah'
+                     then z || jsonb_build_object('etaAr', 'يوم واحد', 'etaEn', '1 day')
+                     else z || jsonb_build_object('etaAr', '2–3 أيام', 'etaEn', '2–3 days')
+                end), '[]'::jsonb)
            from jsonb_array_elements(c.zones) z
        ),
        updated_at = now()
