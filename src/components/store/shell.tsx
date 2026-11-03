@@ -390,7 +390,7 @@ function MobileCategoryBar({ onNavigate }: { onNavigate: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ left: false, right: false });
   const ar = lang === "ar";
-  const cats = [{ cat: "all" as const }, ...NAV];
+  const cats = NAV;
 
   useEffect(() => {
     const el = ref.current;
@@ -455,7 +455,7 @@ function MobileCategoryBar({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-/** Desktop nav: categories split 5 + 5 over rows 1 and 2, Privacy always on row 3. */
+/** Desktop nav: categories on row 1 (and row 2 if there are more than 5), Privacy always on row 3. */
 function NavLinks() {
   const lang = useOwl((state) => state.lang);
   const href = useRouterState({ select: (state) => state.location.href });
@@ -468,8 +468,8 @@ function NavLinks() {
     );
   const rowClass =
     "flex flex-wrap items-center justify-center gap-x-[clamp(1.25rem,3.9vw,5rem)] gap-y-6";
-  const cats = [{ cat: "all" as const }, ...NAV];
-  const catRows = [cats.slice(0, 5), cats.slice(5)];
+  const cats = NAV;
+  const catRows = [cats.slice(0, 5), cats.slice(5)].filter((row) => row.length > 0);
   return (
     <div className="flex flex-col items-center gap-y-6">
       {catRows.map((row, rowIndex) => (
@@ -498,7 +498,7 @@ function NavLinks() {
 /** Expands inside the same glass bar (Trikko style): links stacked under the header row. */
 function MobileMenu({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
   const lang = useOwl((state) => state.lang);
-  const cats = [{ cat: "all" as const }, ...NAV];
+  const cats = NAV;
   const item =
     "block py-3 font-sans text-[16px] font-medium tracking-[0.08em] text-black uppercase transition-opacity active:opacity-60";
   return (
@@ -550,7 +550,7 @@ function Footer() {
           <div dir={dir}>
             <p className="font-display text-xs tracking-brand text-muted uppercase">{t("footer.shop")}</p>
             <ul className="mt-5 flex flex-col gap-3 font-display text-sm tracking-widest uppercase">
-              {[{ cat: "all" as const }, ...NAV].map((item) => (
+              {NAV.map((item) => (
                 <li key={item.cat}>
                   <Link to="/shop" search={{ cat: item.cat }} className="hover:opacity-60">
                     {catLabel(lang, item.cat)}

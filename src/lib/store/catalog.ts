@@ -6,10 +6,10 @@ export type Size = (typeof SIZES)[number];
 export const FITS = ["Oversize", "Boxy Fit", "Regular Fit"] as const;
 export type Fit = (typeof FITS)[number];
 
-export const TAGS = ["new", "bestsellers", "shirts", "hoodies", "tees", "jackets", "pants", "shorts", "sets"] as const;
+export const TAGS = ["new", "shirts", "hoodies", "pants", "pajamas"] as const;
 export type Tag = (typeof TAGS)[number];
 
-export const CATS = ["all", "new", "bestsellers", "shirts", "hoodies", "tees", "jackets", "pants", "shorts", "sets", "sale"] as const;
+export const CATS = ["all", "new", "shirts", "hoodies", "pants", "pajamas"] as const;
 export type Cat = (typeof CATS)[number];
 
 export type ProductColor = {
@@ -242,29 +242,20 @@ export type Coupon = {
 
 
 export const NAV: { label: string; cat: Exclude<Cat, "all"> }[] = [
-  { label: "New Drops", cat: "new" },
-  { label: "Best Sellers", cat: "bestsellers" },
-  { label: "Shirts", cat: "shirts" },
-  { label: "Blouses", cat: "hoodies" },
-  { label: "T-Shirt", cat: "tees" },
-  { label: "Jackets", cat: "jackets" },
+  { label: "New Drop", cat: "new" },
+  { label: "Shirt", cat: "shirts" },
+  { label: "Blouse", cat: "hoodies" },
   { label: "Pants", cat: "pants" },
-  { label: "Shorts", cat: "shorts" },
-  { label: "Sets", cat: "sets" },
+  { label: "Pajamas", cat: "pajamas" },
 ];
 
 export const CAT_LABEL: Record<Cat, string> = {
   all: "All products",
-  new: "New drops",
-  bestsellers: "Best sellers",
-  shirts: "Shirts",
-  hoodies: "Blouses",
-  tees: "T-Shirt",
-  jackets: "Jackets",
+  new: "New drop",
+  shirts: "Shirt",
+  hoodies: "Blouse",
   pants: "Pants",
-  shorts: "Shorts",
-  sets: "Sets",
-  sale: "Sale",
+  pajamas: "Pajamas",
 };
 
 const stock = (patch: Partial<Record<Size, number>> = {}): Record<Size, number> => ({
@@ -369,7 +360,7 @@ export const seedProducts: Product[] = [
     name: "Smoke Column Tee",
     price: 64,
     compareAt: 78,
-    tags: ["tees"],
+    tags: ["shirts"],
     description: "320gsm boxy tee. Smoke grey, dropped shoulder, owl at the chest.",
     details: ["320gsm jersey", "Boxy, dropped shoulder", "Owl embroidery", "Pre-shrunk"],
     images: ["/media/smoke-1.jpg", "/media/smoke-2.jpg"],
@@ -385,7 +376,7 @@ export const seedProducts: Product[] = [
     name: "Ink Standard Tee",
     price: 68,
     compareAt: null,
-    tags: ["tees"],
+    tags: ["shirts"],
     description:
       "The regular-fit essential. Ink black, heavy jersey — currently gone.",
     details: ["Heavy jersey", "Regular fit", "Tonal owl", "Crew neck"],
@@ -402,7 +393,7 @@ export const seedProducts: Product[] = [
     name: "Crest Noir Set",
     price: 220,
     compareAt: null,
-    tags: ["new", "sets"],
+    tags: ["new"],
     description:
       "Hoodie and trouser, cut as one silhouette. Oversize through the shoulder, straight through the leg.",
     details: [
@@ -470,7 +461,6 @@ export function hasColorStock(product: Product) {
 
 export function matchesCat(product: Product, cat: Cat) {
   if (cat === "all") return true;
-  if (cat === "sale") return product.compareAt != null && product.compareAt > product.price;
   return product.tags.includes(cat);
 }
 
@@ -563,56 +553,36 @@ export function blankProduct(): Product {
 
 export const NAV_LABEL: Record<Lang, Record<NavCat, string>> = {
   en: {
-    new: "New Drops",
-    bestsellers: "Best Sellers",
-    shirts: "Shirts",
-    hoodies: "Blouses",
-    tees: "T-Shirt",
-    jackets: "Jackets",
+    new: "New Drop",
+    shirts: "Shirt",
+    hoodies: "Blouse",
     pants: "Pants",
-    shorts: "Shorts",
-    sets: "Sets",
-    sale: "Sale",
+    pajamas: "Pajamas",
   },
   ar: {
-    new: "الجديد",
-    bestsellers: "الأكثر مبيعاً",
-    shirts: "قمصان",
-    hoodies: "بلوزات",
-    tees: "T-Shirt",
-    jackets: "جواكيت",
-    pants: "بناطيل",
-    shorts: "شورتات",
-    sets: "سيت",
-    sale: "تخفيضات",
+    new: "دروب جديد",
+    shirts: "قميص",
+    hoodies: "بلوزة",
+    pants: "بنطال",
+    pajamas: "بيجاما",
   },
 };
 
 /** Text on a "shop" button for a category, e.g. "Shop sets" / "تسوق الأطقم". */
 const SHOP_WORD: Record<Lang, Record<NavCat, string>> = {
   en: {
-    new: "Shop new drops",
-    bestsellers: "Shop best sellers",
+    new: "Shop new drop",
     shirts: "Shop shirts",
     hoodies: "Shop blouses",
-    tees: "Shop T-Shirt",
-    jackets: "Shop jackets",
     pants: "Shop pants",
-    shorts: "Shop shorts",
-    sets: "Shop sets",
-    sale: "Shop sale",
+    pajamas: "Shop pajamas",
   },
   ar: {
-    new: "تسوق الجديد",
-    bestsellers: "تسوق الأكثر مبيعاً",
+    new: "تسوق دروب جديد",
     shirts: "تسوق القمصان",
     hoodies: "تسوق البلوزات",
-    tees: "تسوق T-Shirt",
-    jackets: "تسوق الجواكيت",
     pants: "تسوق البناطيل",
-    shorts: "تسوق الشورتات",
-    sets: "تسوق السيت",
-    sale: "تسوق التخفيضات",
+    pajamas: "تسوق البيجامات",
   },
 };
 
@@ -620,10 +590,10 @@ export function shopLabel(lang: Lang, cat: NavCat) {
   return SHOP_WORD[lang][cat];
 }
 
-/** The "kind" of a product (hoodies / tees / pants / shorts / sets), used to label buttons that link to it. */
+/** The "kind" of a product (shirts / blouses / pants / pajamas), used to label buttons that link to it. */
 export function productCat(product: Product | undefined): NavCat {
-  if (!product) return "sets";
-  for (const cat of ["sets", "shirts", "hoodies", "jackets", "pants", "shorts", "tees"] as const) {
+  if (!product) return "new";
+  for (const cat of ["shirts", "hoodies", "pants", "pajamas"] as const) {
     if (product.tags.includes(cat)) return cat;
   }
   return "new";
