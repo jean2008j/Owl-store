@@ -135,6 +135,7 @@ const mapCompany = (r) => ({
   deliveryAr: r.delivery_ar || '',
   deliveryEn: r.delivery_en || '',
   pickup: Boolean(r.pickup),
+  isCompany: r.is_company !== false,
   enabled: Boolean(r.enabled),
   sortOrder: Number(r.sort_order) || 0,
   zones: (Array.isArray(r.zones) ? r.zones : []).map((z) => ({
@@ -167,6 +168,8 @@ export async function saveShippingCompanies(companies, removedIds = []) {
     delivery_ar: c.deliveryAr.trim(),
     delivery_en: c.deliveryEn.trim(),
     pickup: Boolean(c.pickup),
+    // يُرسل فقط لما يكون false، حتى يظل الحفظ شغّال قبل تشغيل supabase-qamishli.sql
+    ...(c.isCompany === false ? { is_company: false } : {}),
     enabled: Boolean(c.enabled),
     sort_order: i + 1,
     zones: c.zones.map((z) => ({ city: z.city, areas: z.areas.trim(), etaAr: z.etaAr.trim(), etaEn: z.etaEn.trim() })),

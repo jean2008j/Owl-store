@@ -233,6 +233,17 @@ function CompaniesSection() {
           <label className="mt-4 flex items-center gap-3">
             <input
               type="checkbox"
+              checked={row.isCompany === false}
+              onChange={(e) => patch(row.id, { isCompany: !e.target.checked })}
+            />
+            <span className="text-sm">
+              ليست شركة شحن (مثل الاستلام من المحل أو التوصيل المباشر): ما بيظهر للزبون كلمة «شركة»
+            </span>
+          </label>
+
+          <label className="mt-3 flex items-center gap-3">
+            <input
+              type="checkbox"
               checked={row.pickup}
               onChange={(e) => patch(row.id, { pickup: e.target.checked })}
             />

@@ -120,11 +120,16 @@ function CheckoutPage() {
       ? { city, fee: company.fee, etaAr: companyZone.etaAr, etaEn: companyZone.etaEn }
       : null;
   const pickup = Boolean(company?.pickup);
+  // A store option (pick-up from the shop / own delivery) is not a shipping company: no company wording anywhere.
+  const isCompany = company?.isCompany !== false;
+  const methodOnly = cityCompanies.length > 0 && cityCompanies.every((c) => c.isCompany === false);
   const areaList = !pickup && companyZone ? companyZone.areas.split(/[،,]/).map((a) => a.trim()).filter(Boolean) : [];
   // What is saved as the address: the office for pick-up, or area + detailed address for home delivery.
   const finalAddress =
     company && companyZone && pickup
-      ? `استلام من مكتب ${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
+      ? isCompany
+        ? `استلام من مكتب ${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
+        : `${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
       : `${area ? `${area} - ` : ""}${address.trim()}`;
   const shipLabel = company ? (isAr ? company.nameAr : company.nameEn || company.nameAr) : "";
 
@@ -408,10 +413,11 @@ function CheckoutPage() {
             etaEn: companyZone?.etaEn ?? "",
             companyAr: company.nameAr,
             companyEn: company.nameEn || company.nameAr,
+            isCompany,
           }
         : undefined,
       addressParts: pickup
-        ? { area: companyZone?.areas ?? "", detail: "", pickup: true }
+        ? { area: isCompany ? (companyZone?.areas ?? "") : (companyZone?.areas || company?.nameAr || ""), detail: "", pickup: true }
         : { area, detail: address.trim(), pickup: false },
       items: rows.map((row) => ({
         productId: row.product.id,
@@ -581,7 +587,7 @@ function CheckoutPage() {
             </label>
             {city ? (
               <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("checkout.company")}>
-                <p className="field-label">{t("checkout.company")}</p>
+                <p className="field-label">{t(methodOnly ? "checkout.method" : "checkout.company")}</p>
                 {cityCompanies.map((item) => {
                   const z = item.zones.find((entry) => entry.city === city);
                   const chosen = company?.id === item.id;
@@ -615,11 +621,18 @@ function CheckoutPage() {
             ) : null}
             {company && companyZone ? (
               pickup ? (
-                <div className="border border-line px-4 py-3">
-                  <p className="field-label">{t("checkout.pickup")}</p>
-                  <p className="font-bold">{isAr ? company.nameAr : company.nameEn || company.nameAr}</p>
-                  {companyZone.areas ? <p className="mt-1 text-sm">{companyZone.areas}</p> : null}
-                </div>
+                isCompany ? (
+                  <div className="border border-line px-4 py-3">
+                    <p className="field-label">{t("checkout.pickup")}</p>
+                    <p className="font-bold">{isAr ? company.nameAr : company.nameEn || company.nameAr}</p>
+                    {companyZone.areas ? <p className="mt-1 text-sm">{companyZone.areas}</p> : null}
+                  </div>
+                ) : (
+                  <div className="border border-line px-4 py-3">
+                    <p className="text-sm">{t("checkout.storePickup")}</p>
+                    {companyZone.areas ? <p className="mt-1 text-sm font-bold">{companyZone.areas}</p> : null}
+                  </div>
+                )
               ) : (
                 <>
                   {areaList.length > 0 ? (

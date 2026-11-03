@@ -66,6 +66,7 @@ function OrderPage() {
     ? (() => {
         const company = isAr ? delivery.companyAr : delivery.companyEn;
         const eta = (isAr ? delivery.etaAr : delivery.etaEn || delivery.etaAr).trim();
+        if (delivery.pickup && delivery.isCompany === false) return t("order.storePickup");
         if (delivery.pickup) {
           const office = [cityLabel(order.customer.city), delivery.office].filter(Boolean).join(" – ");
           return t(eta ? "order.pickup" : "order.pickupNoEta", { company, office, eta });
@@ -129,5 +130,6 @@ function deliveryFromCompanies(order: Order, companies: ShippingCompany[]): Orde
     etaEn: zone.etaEn,
     companyAr: company.nameAr,
     companyEn: company.nameEn || company.nameAr,
+    isCompany: company.isCompany !== false,
   };
 }

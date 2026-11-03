@@ -126,7 +126,16 @@ export type Order = {
   /** Only used to build the Telegram message (the database keeps the joined `customer.address`). */
   addressParts?: { area: string; detail: string; pickup: boolean };
   /** What the customer was told about delivery (shown on the order page). */
-  delivery?: { pickup: boolean; office: string; etaAr: string; etaEn: string; companyAr: string; companyEn: string };
+  delivery?: {
+    pickup: boolean;
+    office: string;
+    etaAr: string;
+    etaEn: string;
+    companyAr: string;
+    companyEn: string;
+    /** false = a store option (pick-up from the shop / own delivery), not a shipping company. */
+    isCompany?: boolean;
+  };
   items: OrderItem[];
   subtotal: number;
   discount?: number; // coupon discount on the items (shipping is never discounted)
@@ -153,6 +162,7 @@ export const CITIES = [
   "Deir ez-Zor",
   "Raqqa",
   "Al-Hasakah",
+  "Qamishli",
 ] as const;
 
 /** A governorate a shipping company delivers to (with its own delivery time and pick-up / delivery areas). */
@@ -172,6 +182,7 @@ export type ShippingCompany = {
   deliveryAr: string; // e.g. "إلى باب المنزل" / "الاستلام من مكتب الشركة"
   deliveryEn: string;
   pickup: boolean; // true = the customer collects from the company office (no detailed address; the zone's text is the office address)
+  isCompany?: boolean; // false = not a shipping company (e.g. pick-up from the store / own delivery). Missing = true.
   enabled: boolean;
   sortOrder: number;
   zones: CompanyZone[];
@@ -222,7 +233,35 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
       { city: "Damascus", areas: "جسر فيكتوريا خلف البريد القديم", etaAr: "2–3 أيام", etaEn: "2–3 days" },
       { city: "Aleppo", areas: "السليمانية خلف زجاج غريبه", etaAr: "يومين", etaEn: "2 days" },
       { city: "Homs", areas: "الكراج الشمالي", etaAr: "2–3 أيام", etaEn: "2–3 days" },
+      { city: "Al-Hasakah", areas: "كراج تل حجز", etaAr: "", etaEn: "" },
     ],
+  },
+  // Qamishli: the shop is there, so no shipping company. Two plain options.
+  {
+    id: "qamishli-store",
+    nameAr: "استلام من المحل",
+    nameEn: "Pick up from the store",
+    fee: 0,
+    deliveryAr: "بدون أجرة توصيل",
+    deliveryEn: "No delivery fee",
+    pickup: true,
+    isCompany: false,
+    enabled: true,
+    sortOrder: 3,
+    zones: [{ city: "Qamishli", areas: "", etaAr: "", etaEn: "" }],
+  },
+  {
+    id: "qamishli-home",
+    nameAr: "توصيل لباب المنزل",
+    nameEn: "Home delivery",
+    fee: 2,
+    deliveryAr: "",
+    deliveryEn: "",
+    pickup: false,
+    isCompany: false,
+    enabled: true,
+    sortOrder: 4,
+    zones: [{ city: "Qamishli", areas: "", etaAr: "", etaEn: "" }],
   },
 ];
 
@@ -524,7 +563,7 @@ export function formatOrderText(order: Order) {
     `العنوان: ${addressLine}`,
     pieces.join("\n\n"),
     `قيمة الفاتورة: ${invoice}`,
-    ...(order.shipping.companyId ? [`شركة الشحن: ${order.shipping.label}`] : []),
+    ...(order.shipping.companyId && order.delivery?.isCompany !== false ? [`شركة الشحن: ${order.shipping.label}`] : []),
     `رقم الفاتورة: ${order.ref}`,
   ].join("\n");
 }

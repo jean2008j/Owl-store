@@ -137,6 +137,8 @@ export const en = {
   "checkout.addressPh": "Street, building, floor, notes",
   "checkout.shipping": "Shipping",
   "checkout.company": "Shipping company",
+  "checkout.method": "Delivery method",
+  "checkout.storePickup": "You will collect your order from the store, no delivery fee.",
   "checkout.area": "Area",
   "checkout.pickup": "Pick up from the company office",
   "checkout.err.area": "Choose your area.",
@@ -210,6 +212,7 @@ export const en = {
   "order.pickup": "Please collect your order from the {company} office at {office}, in {eta}.",
   "order.pickupNoEta": "Please collect your order from the {company} office at {office}.",
   "order.home": "Your order will arrive at your door within {eta}.",
+  "order.storePickup": "Please collect your order directly from the store.",
   "order.note.sent": "A copy, with the receipt, was sent to the store on Telegram.",
   "order.note.failed":
     "The order is saved here. Telegram did not accept it — check the bot in Admin.",
@@ -450,6 +453,8 @@ export const ar = {
   "checkout.addressPh": "الشارع، البناء، الطابق، ملاحظات",
   "checkout.shipping": "الشحن",
   "checkout.company": "شركة الشحن",
+  "checkout.method": "طريقة التوصيل",
+  "checkout.storePickup": "رح تستلم طلبك من المحل مباشرة، بدون أجرة توصيل.",
   "checkout.area": "المنطقة",
   "checkout.pickup": "الاستلام من مكتب الشركة",
   "checkout.err.area": "اختر منطقتك.",
@@ -521,6 +526,7 @@ export const ar = {
   "order.pickup": "يُرجى مراجعة مكتب شركة {company} في {office} بعد {eta}.",
   "order.pickupNoEta": "يُرجى مراجعة مكتب شركة {company} في {office}.",
   "order.home": "ستصل المنتجات إلى باب منزلك خلال {eta}.",
+  "order.storePickup": "يُرجى استلام طلبك من المحل مباشرة.",
   "order.note.sent": "تم إرسال نسخة من الطلب مع الإيصال إلى المتجر عبر تلغرام.",
   "order.note.failed":
     "تم حفظ الطلب هنا. لم يقبله تلغرام — تحقق من البوت في صفحة الإدارة.",
