@@ -6,8 +6,9 @@
   --color-fg: #f4f1ea;
   --color-muted: #c4c0b6;
   --color-line: #2c2c2a;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Oswald", "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+  /* Classic serif for the whole site (same face for body and headings) */
+  --font-sans: "Lora", Georgia, "Times New Roman", Times, serif;
+  --font-display: "Lora", Georgia, "Times New Roman", Times, serif;
   --tracking-brand: 0.18em;
 }
 
@@ -201,11 +202,11 @@
   min-height: 30rem;
 }
 
-/* Arabic: Cairo only fills in Arabic glyphs, no letter-spacing (it breaks Arabic joins) */
+/* Arabic: classic Naskh fills in the Arabic glyphs, no letter-spacing (it breaks Arabic joins) */
 html[lang="ar"] {
-  /* Latin letters keep Inter / Oswald; Cairo is only the fallback for Arabic glyphs */
-  --font-sans: "Inter", "Cairo", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Oswald", "Cairo", "Arial Narrow", sans-serif;
+  /* Latin letters keep Lora; Noto Naskh Arabic is the face for Arabic glyphs */
+  --font-sans: "Lora", "Noto Naskh Arabic", "Traditional Arabic", "Times New Roman", serif;
+  --font-display: "Lora", "Noto Naskh Arabic", "Traditional Arabic", "Times New Roman", serif;
   --tracking-brand: 0;
 }
 html[lang="ar"] .tracking-widest,
