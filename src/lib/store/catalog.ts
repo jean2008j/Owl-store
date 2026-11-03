@@ -1,5 +1,8 @@
 import { CITY_AR } from "@/lib/i18n/content";
 
+/** The shop's location on Google Maps (footer link, and the pick-up address for store pick-up orders). */
+export const STORE_MAP_URL = "https://maps.app.goo.gl/uwhJvvncMc3tnHaF6";
+
 export const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
 export type Size = (typeof SIZES)[number];
 

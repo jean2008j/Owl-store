@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { fetchShippingCompanies } from "@/lib/db-service";
-import { money, type Order, type ShippingCompany } from "@/lib/store/catalog";
+import { money, STORE_MAP_URL, type Order, type ShippingCompany } from "@/lib/store/catalog";
 import { useI18n } from "@/lib/i18n";
 import { useOwl } from "@/lib/store/owl-store";
 
@@ -81,6 +81,16 @@ function OrderPage() {
       <h1 className="mt-3 font-display text-5xl tracking-widest md:text-7xl">{order.ref}</h1>
       <p className="mt-4 max-w-lg text-base font-bold">{t("order.success")}</p>
       {deliveryLine ? <p className="mt-2 max-w-lg text-sm">{deliveryLine}</p> : null}
+      {delivery?.pickup && delivery.isCompany === false ? (
+        <a
+          href={STORE_MAP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-block text-sm underline underline-offset-4"
+        >
+          {t("footer.map")}
+        </a>
+      ) : null}
       {note ? <p className="mt-2 max-w-lg text-sm text-muted">{note}</p> : null}
 
       <div className="mt-10 border border-line p-5">

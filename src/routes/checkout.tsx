@@ -18,6 +18,7 @@ import {
   sizeLeft,
   type Order,
   type ShippingCompany,
+  STORE_MAP_URL,
 } from "@/lib/store/catalog";
 import { fileToJpegDataUrl } from "@/lib/store/images";
 import { refreshProducts } from "@/lib/store/refresh";
@@ -631,6 +632,14 @@ function CheckoutPage() {
                   <div className="border border-line px-4 py-3">
                     <p className="text-sm">{t("checkout.storePickup")}</p>
                     {companyZone.areas ? <p className="mt-1 text-sm font-bold">{companyZone.areas}</p> : null}
+                    <a
+                      href={STORE_MAP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-sm underline underline-offset-4"
+                    >
+                      {t("footer.map")}
+                    </a>
                   </div>
                 )
               ) : (

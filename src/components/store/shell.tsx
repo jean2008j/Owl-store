@@ -32,6 +32,7 @@ import {
   matchesCat,
   money,
   NAV,
+  STORE_MAP_URL,
   catLabel,
   normalizeContent,
   sizeLeft,
@@ -529,7 +530,6 @@ function MobileMenu({ open, onNavigate }: { open: boolean; onNavigate: () => voi
   );
 }
 
-const MAP_URL = "https://maps.app.goo.gl/uwhJvvncMc3tnHaF6";
 const SOCIALS = [
   {
     href: "https://www.instagram.com/owlstore2025?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw==",
@@ -578,7 +578,7 @@ function Footer() {
               Sharp vision, premium quality
             </p>
             <a
-              href={MAP_URL}
+              href={STORE_MAP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-5 inline-flex items-center gap-2 text-sm hover:opacity-60"
