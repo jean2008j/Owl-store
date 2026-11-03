@@ -172,25 +172,6 @@
   .btn-line:active:not(:disabled) {
     scale: 0.96;
   }
-
-  .owl-marquee {
-    animation: owl-marquee 75s linear infinite;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .owl-marquee {
-      animation: none;
-    }
-  }
-}
-
-@keyframes owl-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
 }
 
 /* Product card placeholder: the whole card (picture + price) softly blinks until the image has loaded */

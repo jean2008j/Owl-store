@@ -76,7 +76,6 @@ export const SIZE_STEP = 10;
 /** Everything the admin can edit on the storefront, stored once per language. */
 export type SiteContent = {
   sizes?: Partial<Record<TextKey, number>>; // font size per text, in % (missing = 100)
-  announcement: string;
   heroKicker: string;
   heroTitle: string;
   heroSub: string;
@@ -280,8 +279,6 @@ const stock = (patch: Partial<Record<Size, number>> = {}): Record<Size, number> 
 
 export const defaultContent: Record<Lang, SiteContent> = {
   en: {
-    announcement:
-      "SHIPPING ACROSS SYRIA  ·  SHAM CASH PAYMENT AVAILABLE  ·  SEASON 04 IS LIVE",
     heroKicker: "Season collection",
     heroTitle: "New Drop",
     heroSub: "Heavyweight hoodies, tees, and sets. Cut oversize. Paid with Sham Cash.",
@@ -295,7 +292,6 @@ export const defaultContent: Record<Lang, SiteContent> = {
     featureProductId: "crest-noir",
   },
   ar: {
-    announcement: "شحن لكل المحافظات السورية  ·  الدفع عبر شام كاش متاح  ·  الموسم 04 متوفر الآن",
     heroKicker: "مجموعة الموسم",
     heroTitle: "الإصدار الجديد",
     heroSub: "هوديات وتيشيرتات وأطقم ثقيلة الوزن. قصّة واسعة. الدفع عبر شام كاش.",

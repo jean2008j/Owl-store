@@ -49,7 +49,6 @@ export function Shell() {
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const theme = useOwl((state) => state.theme);
   const setTheme = useOwl((state) => state.setTheme);
-  const announcement = useOwl((state) => state.settings.content[state.lang].announcement);
   const cartOpen = useOwl((state) => state.cartOpen);
   const searchOpen = useOwl((state) => state.searchOpen);
   const setCartOpen = useOwl((state) => state.setCartOpen);
@@ -205,7 +204,6 @@ export function Shell() {
       <div className="sticky top-0 z-30 h-0" dir="ltr">
         <div className="px-3 pt-2 lg:px-5">
           <div className="overflow-hidden rounded-xl bg-white/75 text-black shadow-lg backdrop-blur-xl backdrop-saturate-150 lg:bg-black/40 lg:text-white">
-            <Announcement text={announcement} />
             <header className="px-3 lg:px-6">
               {/* Mobile: burger (far left) · brand (centre) · language, theme, search, bag (bag far right) */}
               <div className="flex items-center py-1.5 lg:hidden">
@@ -382,30 +380,6 @@ function CenteredGlyph({ children, className }: { children: string; className?: 
     >
       {children}
     </span>
-  );
-}
-
-function Announcement({ text }: { text: string }) {
-  const line = text.trim() || "ATHAR & OWL";
-  return (
-    <div className="overflow-hidden bg-black text-white" dir="ltr">
-      <div className="owl-marquee flex w-max">
-        <MarqueeCopy line={line} />
-        <MarqueeCopy line={line} />
-      </div>
-    </div>
-  );
-}
-
-function MarqueeCopy({ line }: { line: string }) {
-  return (
-    <p className="flex shrink-0 items-center gap-12 px-6 py-2 font-sans text-xs font-bold tracking-wide uppercase">
-      {Array.from({ length: 4 }, (_, index) => (
-        <span key={index} className="whitespace-nowrap">
-          {line}
-        </span>
-      ))}
-    </p>
   );
 }
 

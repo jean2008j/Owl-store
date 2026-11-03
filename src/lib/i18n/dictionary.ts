@@ -261,7 +261,6 @@ export const en = {
   "admin.tab.payments": "Payments",
 
   // admin — storefront
-  "admin.sf.announcement": "Announcement",
   "admin.sf.kicker": "Hero kicker",
   "admin.sf.title": "Hero title",
   "admin.sf.sub": "Hero subtext",
@@ -565,7 +564,7 @@ export const ar = {
   "admin.kicker": "الإدارة",
   "admin.lockedTitle": "لوحة تحكم المتجر",
   "admin.intro":
-    "الشريط الإعلاني والكتالوج والطلبات وإعدادات شام كاش كلها هنا. تبقى التغييرات محفوظة في هذا المتصفح.",
+    "الكتالوج والطلبات وإعدادات شام كاش كلها هنا. تبقى التغييرات محفوظة في هذا المتصفح.",
   "admin.email": "البريد الإلكتروني",
   "admin.password": "كلمة المرور",
   "admin.accessCode": "رمز الدخول",
@@ -580,7 +579,6 @@ export const ar = {
   "admin.tab.orders": "الطلبات",
   "admin.tab.payments": "المدفوعات",
 
-  "admin.sf.announcement": "الشريط الإعلاني",
   "admin.sf.kicker": "العنوان الفرعي للغلاف",
   "admin.sf.title": "عنوان الغلاف",
   "admin.sf.sub": "نص الغلاف",

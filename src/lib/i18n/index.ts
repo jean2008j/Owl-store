@@ -93,7 +93,6 @@ function interpolate(template: string, vars?: Vars) {
 }
 
 const SETTING_TEXT_KEYS = [
-  "announcement",
   "heroKicker",
   "heroTitle",
   "heroSub",

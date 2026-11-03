@@ -124,7 +124,7 @@ export function AdminPanel() {
         <p className="mt-6 font-display text-xs tracking-brand text-muted uppercase">الإدارة</p>
         <h1 className="mt-3 font-display text-4xl uppercase leading-none">التحكم بالمتجر</h1>
         <p className="mt-3 text-sm text-muted">
-          الشريط الإعلاني والمنتجات والطلبات وشام كاش كلها من هنا.
+          المنتجات والطلبات وشام كاش كلها من هنا.
         </p>
         <form
           className="mt-8 flex flex-col gap-3"
@@ -241,7 +241,6 @@ function Dashboard() {
 
 const T = {
     editing: "أنت تعدّل النسخة العربية من الموقع. بدّل اللغة من الأعلى لتعديل النسخة الإنجليزية.",
-    announcement: "الشريط الإعلاني",
     hero: "الواجهة الرئيسية",
     save: "حفظ",
     cancelChanges: "إلغاء التغييرات",
@@ -281,12 +280,11 @@ const T = {
   translateFail: "تعذّرت الترجمة، تحقق من الاتصال بالإنترنت أو اكتب الترجمة يدوياً.",
 } as const;
 
-type Section = "announcement" | "hero" | "feature";
+type Section = "hero" | "feature";
 type Draft = { ar: SiteContent; en: SiteContent };
 
 /** Which saved fields (and font sizes) belong to each section's Save / Cancel buttons. */
 const SECTION_FIELDS: Record<Section, { keys: (keyof SiteContent)[]; sizes: TextKey[] }> = {
-  announcement: { keys: ["announcement"], sizes: [] },
   hero: {
     keys: ["heroKicker", "heroTitle", "heroSub", "heroImages", "heroImagesMobile", "heroCat"],
     sizes: ["heroKicker", "heroTitle", "heroSub"],
@@ -371,7 +369,7 @@ function StorefrontTab() {
   useEffect(() => {
     const base = baseRef.current;
     const incoming: Draft = { ar: storeAr, en: storeEn };
-    for (const section of ["announcement", "hero", "feature"] as const) {
+    for (const section of ["hero", "feature"] as const) {
       const was = sectionSig(base, section);
       if (was === sectionSig(incoming, section)) continue;
       setDraft((d) => (sectionSig(d, section) === was ? applySection(d, incoming, section) : d));
@@ -429,23 +427,6 @@ function StorefrontTab() {
 
   return (
     <div className="flex flex-col gap-12">
-      {/* Announcement */}
-      <section className="flex flex-col gap-3">
-        <SectionTitle>{t.announcement}</SectionTitle>
-        <BilingualField
-          label={t.announcement}
-          ar={ar.announcement}
-          en={en.announcement}
-          onAr={(announcement) => updateAr({ announcement })}
-          onEn={(announcement) => updateEn({ announcement })}
-        />
-        <SectionActions
-          dirty={dirty("announcement")}
-          onSave={() => saveSection("announcement")}
-          onCancel={() => cancelSection("announcement")}
-        />
-      </section>
-
       {/* Hero */}
       <section className="flex flex-col gap-5">
         <SectionTitle

@@ -82,7 +82,7 @@ export async function deleteProductFromDatabase(id) {
   if (error) console.error('خطأ في حذف المنتج:', error.message)
 }
 
-// ---------- Site content (announcement / hero / feature, per language) ----------
+// ---------- Site content (hero / feature, per language) ----------
 export async function fetchSiteContentFromDatabase() {
   if (!supabase) return null
   const { data, error } = await supabase
