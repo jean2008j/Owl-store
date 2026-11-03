@@ -593,7 +593,10 @@ function CheckoutPage() {
                   const z = item.zones.find((entry) => entry.city === city);
                   const chosen = company?.id === item.id;
                   const eta = z ? (isAr ? z.etaAr : z.etaEn || z.etaAr) : "";
-                  const delivery = isAr ? item.deliveryAr : item.deliveryEn || item.deliveryAr;
+                  const deliveryText = isAr ? item.deliveryAr : item.deliveryEn || item.deliveryAr;
+                  // Company office pick-up: the office address goes in the same card, in brackets.
+                  const office = item.pickup && item.isCompany !== false ? (z?.areas ?? "").trim() : "";
+                  const delivery = office ? `${deliveryText} (${office})` : deliveryText;
                   return (
                     <button
                       key={item.id}
@@ -622,13 +625,7 @@ function CheckoutPage() {
             ) : null}
             {company && companyZone ? (
               pickup ? (
-                isCompany ? (
-                  <div className="border border-line px-4 py-3">
-                    <p className="field-label">{t("checkout.pickup")}</p>
-                    <p className="font-bold">{isAr ? company.nameAr : company.nameEn || company.nameAr}</p>
-                    {companyZone.areas ? <p className="mt-1 text-sm">{companyZone.areas}</p> : null}
-                  </div>
-                ) : (
+                isCompany ? null : (
                   <div className="border border-line px-4 py-3">
                     <p className="text-sm">{t("checkout.storePickup")}</p>
                     {companyZone.areas ? <p className="mt-1 text-sm font-bold">{companyZone.areas}</p> : null}

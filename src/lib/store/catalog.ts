@@ -191,7 +191,9 @@ export type ShippingCompany = {
   zones: CompanyZone[];
 };
 
-const SILA_ETA = { etaAr: "5–10 أيام", etaEn: "5–10 days" };
+const SILA_ETA = { etaAr: "2–7 أيام", etaEn: "2–7 days" };
+const RAFIDAIN_ETA = { etaAr: "2–3 أيام", etaEn: "2–3 days" };
+const rafidain = (city: string, areas: string): CompanyZone => ({ city, areas, ...RAFIDAIN_ETA });
 const sila = (city: string, areas: string): CompanyZone => ({ city, areas, ...SILA_ETA });
 const DAMASCUS_AREAS = "الزبداني، القطيفة، برزة، يبرود، الزبلطاني، أشرفية صحنايا";
 
@@ -233,10 +235,10 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
     enabled: true,
     sortOrder: 2,
     zones: [
-      { city: "Damascus", areas: "جسر فيكتوريا خلف البريد القديم", etaAr: "2–3 أيام", etaEn: "2–3 days" },
-      { city: "Aleppo", areas: "السليمانية خلف زجاج غريبه", etaAr: "يومين", etaEn: "2 days" },
-      { city: "Homs", areas: "الكراج الشمالي", etaAr: "2–3 أيام", etaEn: "2–3 days" },
-      { city: "Al-Hasakah", areas: "كراج تل حجز", etaAr: "", etaEn: "" },
+      rafidain("Damascus", "جسر فيكتوريا خلف البريد القديم"),
+      rafidain("Aleppo", "السليمانية خلف زجاج غريبه"),
+      rafidain("Homs", "الكراج الشمالي"),
+      rafidain("Al-Hasakah", "كراج تل حجز"),
     ],
   },
   // Qamishli: the shop is there, so no shipping company. Two plain options.
