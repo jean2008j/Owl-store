@@ -455,7 +455,7 @@ function MobileCategoryBar({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-/** Desktop nav: categories split 5 + 5 over rows 1 and 2, Our Story + Privacy always on row 3. */
+/** Desktop nav: categories split 5 + 5 over rows 1 and 2, Privacy always on row 3. */
 function NavLinks() {
   const lang = useOwl((state) => state.lang);
   const href = useRouterState({ select: (state) => state.location.href });
@@ -487,9 +487,6 @@ function NavLinks() {
         </div>
       ))}
       <div className={rowClass}>
-        <Link to="/story" className={linkClass(href.startsWith("/story"))}>
-          {ar ? "قصّتنا" : "Our Story"}
-        </Link>
         <Link to="/privacy" className={linkClass(href.startsWith("/privacy"))}>
           {ar ? "سياسة الخصوصية" : "Privacy Policy"}
         </Link>
@@ -523,9 +520,6 @@ function MobileMenu({ open, onNavigate }: { open: boolean; onNavigate: () => voi
               {catLabel(lang, c.cat)}
             </Link>
           ))}
-          <Link to="/story" onClick={onNavigate} className={item}>
-            {lang === "ar" ? "قصّتنا" : "Our Story"}
-          </Link>
           <Link to="/privacy" onClick={onNavigate} className={item}>
             {lang === "ar" ? "سياسة الخصوصية" : "Privacy Policy"}
           </Link>
@@ -548,49 +542,11 @@ const SOCIALS = [
 
 function Footer() {
   const { t, lang, dir } = useI18n();
-  const [email, setEmail] = useState("");
-  const [joined, setJoined] = useState(false);
 
   return (
     <footer className="border-t border-line">
       <div dir="ltr" className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-12 md:px-8">
-        <div dir={dir} className="md:col-span-5">
-          <h2 className="font-display text-lg leading-snug uppercase md:text-xl">{t("footer.heading")}</h2>
-          <form
-            className="mt-6 flex max-w-md gap-2"
-            dir="ltr"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!email.includes("@")) return;
-              const key = "owl-list";
-              const current = JSON.parse(localStorage.getItem(key) || "[]") as string[];
-              localStorage.setItem(key, JSON.stringify([...new Set([...current, email.trim()])]));
-              setJoined(true);
-              setEmail("");
-            }}
-          >
-            <label className="sr-only" htmlFor="drop-email">
-              {t("footer.email")}
-            </label>
-            <input
-              id="drop-email"
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder={t("footer.emailPlaceholder")}
-              className="field min-w-0 flex-1"
-              dir={lang === "ar" ? "rtl" : "ltr"}
-            />
-            <button type="submit" className="btn-solid shrink-0">
-              {t("footer.join")}
-            </button>
-          </form>
-          <p className="mt-3 text-sm text-muted">
-            {joined ? t("footer.joined") : t("footer.note")}
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:col-span-7 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:col-span-12 md:grid-cols-3">
           <div dir={dir}>
             <p className="font-display text-xs tracking-brand text-muted uppercase">{t("footer.shop")}</p>
             <ul className="mt-5 flex flex-col gap-3 font-display text-sm tracking-widest uppercase">
@@ -606,11 +562,6 @@ function Footer() {
           <div dir={dir}>
             <p className="font-display text-xs tracking-brand text-muted uppercase">{t("footer.house")}</p>
             <ul className="mt-5 flex flex-col gap-3 font-display text-sm tracking-widest uppercase">
-              <li>
-                <Link to="/story" className="hover:opacity-60">
-                  {lang === "ar" ? "قصّتنا" : "Our Story"}
-                </Link>
-              </li>
               <li>
                 <Link to="/privacy" className="hover:opacity-60">
                   {lang === "ar" ? "سياسة الخصوصية" : "Privacy Policy"}
