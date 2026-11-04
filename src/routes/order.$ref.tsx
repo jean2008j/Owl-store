@@ -53,14 +53,6 @@ function OrderPage() {
     );
   }
 
-  // When Telegram received the order there is nothing to tell the customer; only a problem is shown.
-  const note =
-    order.telegram === "sent"
-      ? null
-      : order.telegram === "failed"
-        ? t("order.note.failed")
-        : t("order.note.unconfigured");
-
   const delivery = order.delivery ?? deliveryFromCompanies(order, companies);
   const deliveryLine = delivery
     ? (() => {
@@ -91,7 +83,6 @@ function OrderPage() {
           {t("footer.map")}
         </a>
       ) : null}
-      {note ? <p className="mt-2 max-w-lg text-sm text-muted">{note}</p> : null}
 
       <div className="mt-10 border border-line p-5">
         <p className="text-sm">
