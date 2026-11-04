@@ -6,8 +6,6 @@ import {
 } from "@/lib/db-service";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
-  ChevronLeft,
-  ChevronRight,
   Instagram,
   MapPin,
   Menu,
@@ -221,7 +219,7 @@ export function Shell() {
                 <div className="flex min-w-0 flex-1 justify-center">
                   <Link
                     to="/"
-                    className="-translate-y-[2px] font-display text-[18px] leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-black uppercase"
+                    className="font-display text-[23px] leading-none font-bold tracking-[0.05em] whitespace-nowrap text-black uppercase"
                     onClick={() => setMenuOpen(false)}
                   >
                     Athar &amp; Owl
@@ -229,16 +227,12 @@ export function Shell() {
                 </div>
                 <HeaderControls count={count} onOpen={() => setMenuOpen(false)} />
               </div>
-              {/* Mobile: scrollable category strip under the brand row */}
-              <div className="lg:hidden">
-                <MobileCategoryBar onNavigate={() => setMenuOpen(false)} />
-              </div>
               {/* Desktop: logo | nav | controls */}
               <div className="hidden min-h-[85px] grid-cols-[1fr_auto_1fr] items-center gap-6 py-3 lg:grid">
                 <div className="flex items-center justify-start">
                   <Link
                     to="/"
-                    className="font-display text-2xl font-semibold tracking-widest whitespace-nowrap text-white uppercase"
+                    className="font-display text-4xl font-bold tracking-widest whitespace-nowrap text-white uppercase"
                   >
                     Athar &amp; Owl
                   </Link>
@@ -381,78 +375,6 @@ function CenteredGlyph({ children, className }: { children: string; className?: 
     >
       {children}
     </span>
-  );
-}
-
-/** Mobile category strip (Trikko style): one swipeable row with small arrows when there is more to see. */
-function MobileCategoryBar({ onNavigate }: { onNavigate: () => void }) {
-  const lang = useOwl((state) => state.lang);
-  const href = useRouterState({ select: (state) => state.location.href });
-  const ref = useRef<HTMLDivElement>(null);
-  const [edge, setEdge] = useState({ left: false, right: false });
-  const ar = lang === "ar";
-  const cats = NAV;
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => {
-      const max = el.scrollWidth - el.clientWidth;
-      // normalise so 0 is always the visual left end (RTL scrollLeft runs from -max to 0)
-      const x = ar ? el.scrollLeft + max : el.scrollLeft;
-      setEdge({ left: x > 2, right: x < max - 2 });
-    };
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    void document.fonts?.ready.then(update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [ar, lang]);
-
-  const nudge = (dir: 1 | -1) => ref.current?.scrollBy({ left: dir * 160, behavior: "smooth" });
-  const arrow =
-    "absolute inset-y-0 z-10 inline-flex w-6 items-center justify-center text-black/70";
-
-  return (
-    <div className="relative border-t border-black/10" dir="ltr">
-      {edge.left ? (
-        <button type="button" aria-label="Scroll left" className={cn(arrow, "left-0")} onClick={() => nudge(-1)}>
-          <ChevronLeft className="size-4" />
-        </button>
-      ) : null}
-      <div
-        ref={ref}
-        dir={ar ? "rtl" : "ltr"}
-        className="no-scrollbar flex items-center overflow-x-auto px-2"
-      >
-        {cats.map((item) => {
-          const active = href.includes(`cat=${item.cat}`);
-          return (
-            <Link
-              key={item.cat}
-              to="/shop"
-              search={{ cat: item.cat }}
-              onClick={onNavigate}
-              className={cn(
-                "shrink-0 px-3.5 py-2 font-sans font-semibold whitespace-nowrap text-black uppercase",
-                ar ? "text-[14px]" : "text-[12.5px] tracking-wide",
-                active && "underline decoration-2 underline-offset-[6px]",
-              )}
-            >
-              {catLabel(lang, item.cat)}
-            </Link>
-          );
-        })}
-      </div>
-      {edge.right ? (
-        <button type="button" aria-label="Scroll right" className={cn(arrow, "right-0")} onClick={() => nudge(1)}>
-          <ChevronRight className="size-4" />
-        </button>
-      ) : null}
-    </div>
   );
 }
 
