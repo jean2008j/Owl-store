@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ProductCard } from "@/components/store/product-card";
 import { catLabel, NAV } from "@/lib/store/catalog";
 import { useI18n } from "@/lib/i18n";
 import { useOwl } from "@/lib/store/owl-store";
@@ -21,7 +20,7 @@ function Home() {
     <>
       {/* Store name, big, right under the floating header */}
       <section className="px-4 pt-24 pb-6 text-center lg:pt-56">
-        <h1 className="font-display text-5xl leading-none font-bold tracking-[0.06em] uppercase md:text-7xl">
+        <h1 className="font-display text-[clamp(1.6rem,9.5vw,2.75rem)] leading-none font-bold tracking-[0.05em] whitespace-nowrap uppercase md:text-7xl">
           Athar &amp; Owl
         </h1>
       </section>
@@ -59,23 +58,6 @@ function Home() {
       </section>
 
       <div className="relative z-10 bg-bg">
-        <section className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-20">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <p className="font-display text-xs tracking-brand text-muted uppercase">{t("home.season")}</p>
-              <h2 className="mt-2 font-display text-4xl uppercase leading-none md:text-5xl">{t("home.floor")}</h2>
-            </div>
-            <Link to="/shop" search={{ cat: "all" }} className="font-display text-xs tracking-widest uppercase">
-              {t("home.shopAll")}
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-12 md:grid-cols-3 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-
         <section dir="ltr" className="grid border-t border-line md:grid-cols-3">
           {(
             [

@@ -202,11 +202,11 @@
   min-height: 30rem;
 }
 
-/* Arabic: classic Naskh fills in the Arabic glyphs, no letter-spacing (it breaks Arabic joins) */
+/* Arabic: Tajawal fills in the Arabic glyphs, no letter-spacing (it breaks Arabic joins) */
 html[lang="ar"] {
-  /* Latin letters keep Lora; Noto Naskh Arabic is the face for Arabic glyphs */
-  --font-sans: "Lora", "Noto Naskh Arabic", "Traditional Arabic", "Times New Roman", serif;
-  --font-display: "Lora", "Noto Naskh Arabic", "Traditional Arabic", "Times New Roman", serif;
+  /* Latin letters keep Lora; Tajawal is the face for Arabic glyphs */
+  --font-sans: "Lora", "Tajawal", "Noto Naskh Arabic", "Times New Roman", serif;
+  --font-display: "Lora", "Tajawal", "Noto Naskh Arabic", "Times New Roman", serif;
   --tracking-brand: 0;
 }
 html[lang="ar"] .tracking-widest,
