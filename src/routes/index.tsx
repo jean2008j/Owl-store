@@ -19,8 +19,8 @@ function Home() {
   return (
     <>
       {/* Store name, big, right under the floating header */}
-      <section className="px-4 pt-24 pb-6 text-center lg:pt-56">
-        <h1 className="font-display text-[clamp(1.6rem,9.5vw,2.75rem)] leading-none font-bold tracking-[0.05em] whitespace-nowrap uppercase md:text-7xl">
+      <section className="px-4 pt-[5.4rem] pb-8 text-center lg:pt-56 lg:pb-10">
+        <h1 className="font-display text-[clamp(1.6rem,10.5vw,3.25rem)] leading-none font-bold tracking-[0.03em] whitespace-nowrap uppercase md:text-7xl">
           Athar &amp; Owl
         </h1>
       </section>
