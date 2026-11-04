@@ -17,6 +17,30 @@ const mask = (value: string, token?: string) => {
   return out.replace(/bot\d{6,}:[A-Za-z0-9_-]{20,}/g, "bot<token>");
 };
 
+// Telegram sometimes fails for a moment (network hiccup, 429, 5xx). Try up to 3 times before giving up.
+const ATTEMPTS = 3;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+async function tgFetch(url: string, makeInit: () => RequestInit, label: string): Promise<{ r: Response; j: any }> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+    try {
+      const r = await fetch(url, { ...makeInit(), signal: AbortSignal.timeout(12000) });
+      const j = await r.json().catch(() => ({}));
+      const retryable = r.status === 429 || r.status >= 500;
+      if (!retryable || attempt === ATTEMPTS) return { r, j };
+      const wait = r.status === 429 ? Math.min(Number(j?.parameters?.retry_after ?? 1), 3) * 1000 : attempt * 700;
+      console.error(`notify-order: ${label} attempt ${attempt} got HTTP ${r.status}, retrying in ${wait}ms`);
+      await sleep(wait);
+    } catch (e) {
+      lastError = e;
+      console.error(`notify-order: ${label} attempt ${attempt} failed: ${e instanceof Error ? e.message : String(e)}`.replace(/bot\d{6,}:[A-Za-z0-9_-]{20,}/g, "bot<token>"));
+      if (attempt === ATTEMPTS) throw e;
+      await sleep(attempt * 700);
+    }
+  }
+  throw lastError;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   let token: string | undefined;
@@ -37,12 +61,15 @@ Deno.serve(async (req) => {
     if (tooOld || order.data?.telegram === "sent") return reply({ status: "failed", detail: "Order already notified or too old." });
 
     const api = (method: string) => `https://api.telegram.org/bot${token}/${method}`;
-    let r = await fetch(api("sendMessage"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: String(text).slice(0, 3900) }),
-    });
-    let j = await r.json();
+    let { r, j } = await tgFetch(
+      api("sendMessage"),
+      () => ({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: String(text).slice(0, 3900) }),
+      }),
+      "sendMessage",
+    );
     if (!j.ok) {
       console.error(`notify-order ${ref}: sendMessage rejected: ${r.status} ${j.error_code ?? ""} ${j.description ?? ""}`);
       return reply({ status: "failed", detail: j.description ?? "Telegram rejected the message." });
@@ -51,12 +78,17 @@ Deno.serve(async (req) => {
     const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/i.exec(receiptDataUrl || "");
     if (m) {
       const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
-      const form = new FormData();
-      form.set("chat_id", chatId);
-      form.set("caption", `Sham Cash receipt · ${ref}`);
-      form.set("photo", new Blob([bytes], { type: m[1] }), "receipt.jpg");
-      r = await fetch(api("sendPhoto"), { method: "POST", body: form });
-      j = await r.json();
+      ({ r, j } = await tgFetch(
+        api("sendPhoto"),
+        () => {
+          const form = new FormData();
+          form.set("chat_id", chatId);
+          form.set("caption", `Sham Cash receipt · ${ref}`);
+          form.set("photo", new Blob([bytes], { type: m[1] }), "receipt.jpg");
+          return { method: "POST", body: form };
+        },
+        "sendPhoto",
+      ));
       if (!j.ok) {
         console.error(`notify-order ${ref}: sendPhoto rejected: ${r.status} ${j.error_code ?? ""} ${j.description ?? ""}`);
         return reply({ status: "failed", detail: j.description ?? "Receipt photo failed." });
