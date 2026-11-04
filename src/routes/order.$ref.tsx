@@ -73,6 +73,14 @@ function OrderPage() {
       <h1 className="mt-3 font-display text-5xl tracking-widest md:text-7xl">{order.ref}</h1>
       <p className="mt-4 max-w-lg text-base font-bold">{t("order.success")}</p>
       {deliveryLine ? <p className="mt-2 max-w-lg text-sm">{deliveryLine}</p> : null}
+      {delivery?.pickup && delivery.isCompany !== false && delivery.officePhone ? (
+        <p className="mt-1 max-w-lg text-sm font-bold">
+          {t("order.officePhone", { phone: "" })}
+          <a href={`tel:${delivery.officePhone}`} dir="ltr" className="underline underline-offset-4">
+            {delivery.officePhone}
+          </a>
+        </p>
+      ) : null}
       {delivery?.pickup && delivery.isCompany === false ? (
         <a
           href={STORE_MAP_URL}
@@ -127,6 +135,7 @@ function deliveryFromCompanies(order: Order, companies: ShippingCompany[]): Orde
   return {
     pickup: company.pickup,
     office: company.pickup ? zone.areas : "",
+    officePhone: company.pickup ? (zone.phone ?? "") : "",
     etaAr: zone.etaAr,
     etaEn: zone.etaEn,
     companyAr: company.nameAr,

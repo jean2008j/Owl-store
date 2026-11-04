@@ -143,6 +143,7 @@ const mapCompany = (r) => ({
     areas: String(z.areas || ''),
     etaAr: String(z.etaAr || ''),
     etaEn: String(z.etaEn || ''),
+    phone: String(z.phone || ''),
   })),
 })
 
@@ -172,7 +173,7 @@ export async function saveShippingCompanies(companies, removedIds = []) {
     ...(c.isCompany === false ? { is_company: false } : {}),
     enabled: Boolean(c.enabled),
     sort_order: i + 1,
-    zones: c.zones.map((z) => ({ city: z.city, areas: z.areas.trim(), etaAr: z.etaAr.trim(), etaEn: z.etaEn.trim() })),
+    zones: c.zones.map((z) => ({ city: z.city, areas: z.areas.trim(), etaAr: z.etaAr.trim(), etaEn: z.etaEn.trim(), phone: (z.phone || '').trim() })),
     updated_at: new Date().toISOString(),
   }))
   if (removedIds.length) {

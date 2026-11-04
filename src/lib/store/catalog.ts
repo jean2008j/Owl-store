@@ -132,6 +132,8 @@ export type Order = {
   delivery?: {
     pickup: boolean;
     office: string;
+    /** Phone of the company office (shown on the order page). */
+    officePhone?: string;
     etaAr: string;
     etaEn: string;
     companyAr: string;
@@ -174,6 +176,8 @@ export type CompanyZone = {
   areas: string; // areas separated by «،» (home delivery) or the office address (pick-up)
   etaAr: string;
   etaEn: string;
+  /** Office phone shown to the customer (pick-up companies, e.g. Sila). Optional. */
+  phone?: string;
 };
 
 /** A shipping company (Sila, Al-Rafidain…). Flat fee, covers some governorates. The customer picks one at checkout. */
@@ -194,8 +198,7 @@ export type ShippingCompany = {
 const SILA_ETA = { etaAr: "2–7 أيام", etaEn: "2–7 days" };
 const RAFIDAIN_ETA = { etaAr: "2–3 أيام", etaEn: "2–3 days" };
 const rafidain = (city: string, areas: string): CompanyZone => ({ city, areas, ...RAFIDAIN_ETA });
-const sila = (city: string, areas: string): CompanyZone => ({ city, areas, ...SILA_ETA });
-const DAMASCUS_AREAS = "الزبداني، القطيفة، برزة، يبرود، الزبلطاني، أشرفية صحنايا";
+const sila = (city: string, areas: string, phone = ""): CompanyZone => ({ city, areas, phone, ...SILA_ETA });
 
 /** Used in demo mode (no Supabase). Same data the SQL file seeds. */
 export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
@@ -203,25 +206,25 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
     id: "sila",
     nameAr: "صلة",
     nameEn: "Sila",
-    fee: 4,
-    deliveryAr: "إلى باب المنزل",
-    deliveryEn: "Home delivery",
-    pickup: false,
+    fee: 2,
+    deliveryAr: "الاستلام من مكتب الشركة",
+    deliveryEn: "Pick-up from the company office",
+    pickup: true,
     enabled: true,
     sortOrder: 1,
     zones: [
-      sila("Damascus", DAMASCUS_AREAS),
-      sila("Rural Damascus", DAMASCUS_AREAS),
-      sila("Deir ez-Zor", "البوكمال، الميادين، مركزي"),
-      sila("Tartus", "حديقة الملجأ، بانياس، دريكيش"),
-      sila("Aleppo", "منبج، مركزي - الأعظمية، اعزاز، الأتارب، الباب، دوار الموت"),
-      sila("Hama", "البارودية، السقيلبية، سلمية، مصياف"),
-      sila("Homs", "كرم اللوز، الحولة، الرستن، تل كلخ"),
-      sila("Daraa", "المجمع الحكومي، انخل"),
-      sila("Idlib", "المتنبي، أريحا، البارة، حارم، خان شيخون، سراقب، سرمدا، معرة النعمان"),
-      sila("Al-Hasakah", "الكلاسة، مركزي - دوار التفاحة"),
-      sila("Raqqa", "سوق الهال القديم، سلوك"),
-      sila("Latakia", "المشروع السابع، جبلة"),
+      sila("Damascus", "الزبلطاني، خلف الهجرة والجوازات، المنطقة الصناعية، مقسم رقم 11", "0989700311"),
+      sila("Rural Damascus", "الزبلطاني، خلف الهجرة والجوازات، المنطقة الصناعية، مقسم رقم 11", "0989700311"),
+      sila("Deir ez-Zor", "", ""),
+      sila("Tartus", "طرطوس جنوب حديقة الملجأ - غرب فلافل العرب", "0989700314"),
+      sila("Aleppo", "الأعظمية - خط صلاح الدين بعد مفرق عوجة باتجاه جسر قصر الضيافة مقابل شركة الهرم", "0989700312"),
+      sila("Hama", "البارودية - جانب مديرية النفوس", "0989700316"),
+      sila("Homs", "كرم اللوز - خلف مشفى كرم اللوز العيادات", "0989700315"),
+      sila("Daraa", "شمال الخط - بعد مطعم فلفول (مستر نوح) بـ200 متر نحو الشرق", "0989700317"),
+      sila("Idlib", "إدلب المدينة - شارع الـ40 مقابل مدرسة المتنبي", "0989700310"),
+      sila("Al-Hasakah", "الكلاسة - شارع الـ34 - مقابل جامع السيدة زينب", "0989700320"),
+      sila("Raqqa", "سوق الهال القديم جانب معرض الفرحان", "0989700319"),
+      sila("Latakia", "المشروع السابع - شارع الشعبة", "0989700313"),
     ],
   },
   {
@@ -546,9 +549,9 @@ export function formatOrderText(order: Order) {
   const city = CITY_AR[order.customer.city] ?? order.customer.city;
   const parts = order.addressParts;
   const detail = (parts ? parts.detail : order.customer.address).replace(/\s*\n+\s*/g, "، ").trim();
-  // Sila (home delivery): "المحافظة - المنطقة (العنوان التفصيلي)". Al-Rafidain (office pick-up): no brackets.
+  // "المحافظة - المنطقة/المكتب (العنوان التفصيلي)": the detailed address is in brackets whenever the customer wrote one.
   const addressLine = parts
-    ? `${city}${parts.area ? ` - ${parts.area}` : ""}${!parts.pickup && detail ? ` (${detail})` : ""}`
+    ? `${city}${parts.area ? ` - ${parts.area}` : ""}${detail ? ` (${detail})` : ""}`
     : `${city}${detail ? ` (${detail})` : ""}`;
   const pieces = order.items.map((item) =>
     [

@@ -119,7 +119,7 @@ function CompaniesSection() {
       rows.map((row) => {
         if (row.id !== id) return row;
         const free = CITIES.find((city) => !row.zones.some((z) => z.city === city)) ?? CITIES[0];
-        return { ...row, zones: [...row.zones, { city: free, areas: "", etaAr: "", etaEn: "" }] };
+        return { ...row, zones: [...row.zones, { city: free, areas: "", etaAr: "", etaEn: "", phone: "" }] };
       }),
     );
   }
@@ -259,13 +259,14 @@ function CompaniesSection() {
               : "اكتب المناطق مفصولة بفاصلة عربية «،»، وكل منطقة بتظهر للزبون كبطاقة يختارها."}
           </p>
           <div className="mt-2 overflow-x-auto border border-line">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[880px] text-sm">
               <thead className="border-b border-line text-xs text-muted">
                 <tr>
                   <th className="px-3 py-2 text-start font-medium">المحافظة</th>
                   <th className="px-3 py-2 text-start font-medium">{row.pickup ? "عنوان المكتب" : "المناطق"}</th>
                   <th className="px-3 py-2 text-start font-medium">المدة (عربي)</th>
                   <th className="px-3 py-2 text-start font-medium">Time (English)</th>
+                  <th className="px-3 py-2 text-start font-medium">هاتف المكتب</th>
                   <th className="w-12" />
                 </tr>
               </thead>
@@ -309,6 +310,16 @@ function CompaniesSection() {
                         onChange={(e) => patchZone(row.id, index, { etaEn: e.target.value })}
                       />
                     </td>
+                    <td className="px-3 py-2">
+                      <input
+                        className="field min-w-32"
+                        dir="ltr"
+                        inputMode="tel"
+                        value={z.phone ?? ""}
+                        placeholder="09xxxxxxxx"
+                        onChange={(e) => patchZone(row.id, index, { phone: e.target.value })}
+                      />
+                    </td>
                     <td className="px-2 py-2">
                       <button
                         type="button"
@@ -327,7 +338,7 @@ function CompaniesSection() {
                 ))}
                 {row.zones.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-3 py-4 text-center text-xs text-muted">
+                    <td colSpan={6} className="px-3 py-4 text-center text-xs text-muted">
                       ما في محافظات بعد. هذه الشركة لن تظهر للزبون حتى تضيف محافظة.
                     </td>
                   </tr>

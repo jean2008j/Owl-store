@@ -130,12 +130,16 @@ function CheckoutPage() {
   const methodOnly = cityCompanies.length > 0 && cityCompanies.every((c) => c.isCompany === false);
   const areaList = !pickup && companyZone ? companyZone.areas.split(/[،,]/).map((a) => a.trim()).filter(Boolean) : [];
   // What is saved as the address: the office for pick-up, or area + detailed address for home delivery.
-  const finalAddress =
+  const detailText = address.trim();
+  const finalAddress = (
     company && companyZone && pickup
-      ? isCompany
-        ? `استلام من مكتب ${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
-        : `${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
-      : `${area ? `${area} - ` : ""}${address.trim()}`;
+      ? `${
+          isCompany
+            ? `استلام من مكتب ${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
+            : `${company.nameAr}${companyZone.areas ? `: ${companyZone.areas}` : ""}`
+        }${detailText ? ` — ${detailText}` : ""}`
+      : `${area ? `${area} - ` : ""}${detailText}`
+  ).slice(0, 300);
   const shipLabel = company ? (isAr ? company.nameAr : company.nameEn || company.nameAr) : "";
 
   // The chosen governorate is no longer open: say so right away and send the customer back to pick another one.
@@ -414,6 +418,7 @@ function CheckoutPage() {
         ? {
             pickup,
             office: pickup ? (companyZone?.areas ?? "") : "",
+            officePhone: pickup ? (companyZone?.phone ?? "") : "",
             etaAr: companyZone?.etaAr ?? "",
             etaEn: companyZone?.etaEn ?? "",
             companyAr: company.nameAr,
@@ -422,7 +427,7 @@ function CheckoutPage() {
           }
         : undefined,
       addressParts: pickup
-        ? { area: isCompany ? (companyZone?.areas ?? "") : (companyZone?.areas || company?.nameAr || ""), detail: "", pickup: true }
+        ? { area: isCompany ? (companyZone?.areas ?? "") : (companyZone?.areas || company?.nameAr || ""), detail: address.trim(), pickup: true }
         : { area, detail: address.trim(), pickup: false },
       items: rows.map((row) => ({
         productId: row.product.id,
@@ -590,7 +595,19 @@ function CheckoutPage() {
                 <span className="mt-2 block border border-line p-3 text-sm text-muted">{t("checkout.noZones")}</span>
               ) : null}
             </label>
-            {city ? (
+            {city && cityOpen ? (
+              <label>
+                <span className="field-label text-base! text-fg!">{t("checkout.address")}</span>
+                <textarea
+                  className="field min-h-28 placeholder:text-fg/35"
+                  maxLength={200}
+                  value={address}
+                  onChange={(event) => setAddress(event.target.value)}
+                  placeholder={t("checkout.addressPh")}
+                />
+              </label>
+            ) : null}
+            {city && cityOpen ? (
               <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("checkout.company")}>
                 <p className="field-label text-base! text-fg!">
                   {t(methodOnly ? "checkout.method" : "checkout.company")}{" "}
@@ -636,58 +653,54 @@ function CheckoutPage() {
                 })}
               </div>
             ) : null}
-            {company && companyZone ? (
-              pickup ? (
-                isCompany ? null : (
-                  <div className="border border-line px-4 py-3">
-                    <p className="text-sm">{t("checkout.storePickup")}</p>
-                    {companyZone.areas ? <p className="mt-1 text-sm font-bold">{companyZone.areas}</p> : null}
-                    <a
-                      href={STORE_MAP_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-block text-sm underline underline-offset-4"
-                    >
-                      {t("footer.map")}
+            {city && cityOpen && company?.id === "sila" ? (
+              <div className="border border-line px-4 py-3 text-sm leading-relaxed">
+                <p>{t("checkout.silaNote", { extra: money(2) })}</p>
+                {companyZone?.phone ? (
+                  <p className="mt-1 font-bold">
+                    {t("checkout.silaCall", { phone: "" })}
+                    <a href={`tel:${companyZone.phone}`} dir="ltr" className="underline underline-offset-4">
+                      {companyZone.phone}
                     </a>
-                  </div>
-                )
-              ) : (
-                <>
-                  {areaList.length > 0 ? (
-                    <div role="radiogroup" aria-label={t("checkout.area")}>
-                      <p className="field-label text-base! text-fg!">{t("checkout.area")}</p>
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        {areaList.map((item) => (
-                          <button
-                            key={item}
-                            type="button"
-                            role="radio"
-                            aria-checked={area === item}
-                            onClick={() => setArea(item)}
-                            className={cn(
-                              "border px-3 py-3 text-center text-sm transition-colors",
-                              area === item ? "border-fg bg-fg/5 font-bold" : "border-line hover:border-fg",
-                            )}
-                          >
-                            {item}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  <label>
-                    <span className="field-label text-base! text-fg!">{t("checkout.address")}</span>
-                    <textarea
-                      className="field min-h-28"
-                      maxLength={300}
-                      value={address}
-                      onChange={(event) => setAddress(event.target.value)}
-                      placeholder={t("checkout.addressPh")}
-                    />
-                  </label>
-                </>
-              )
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            {company && companyZone && pickup && !isCompany ? (
+              <div className="border border-line px-4 py-3">
+                <p className="text-sm">{t("checkout.storePickup")}</p>
+                {companyZone.areas ? <p className="mt-1 text-sm font-bold">{companyZone.areas}</p> : null}
+                <a
+                  href={STORE_MAP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block text-sm underline underline-offset-4"
+                >
+                  {t("footer.map")}
+                </a>
+              </div>
+            ) : null}
+            {company && companyZone && !pickup && areaList.length > 0 ? (
+              <div role="radiogroup" aria-label={t("checkout.area")}>
+                <p className="field-label text-base! text-fg!">{t("checkout.area")}</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {areaList.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      role="radio"
+                      aria-checked={area === item}
+                      onClick={() => setArea(item)}
+                      className={cn(
+                        "border px-3 py-3 text-center text-sm transition-colors",
+                        area === item ? "border-fg bg-fg/5 font-bold" : "border-line hover:border-fg",
+                      )}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
