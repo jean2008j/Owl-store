@@ -653,7 +653,11 @@ function CartDrawer() {
                   key={`${line.productId}-${line.size}-${line.fit}-${line.colorId}`}
                   line={line}
                   name={productName(product)}
-                  image={product.images[0] || "/media/night-1.jpg"}
+                  image={
+                    product.images[Math.max(0, product.colors.findIndex((c) => c.id === line.colorId))] ||
+                    product.images[0] ||
+                    "/media/night-1.jpg"
+                  }
                   price={product.price}
                   colorName={colorName}
                   max={product.soldOut ? line.qty : sizeLeft(product, line.size, line.colorId) || line.qty}
@@ -713,10 +717,8 @@ function CartRow({
           <p className="text-sm">{name}</p>
           <p className="text-sm tabular-nums">{money(price * line.qty)}</p>
         </div>
-        <p className="mt-1 text-xs text-muted">
-          {line.size} · {fitLabel(line.fit)} · {colorName}
-        </p>
-        <div className="mt-3 flex items-center gap-2">
+        <p className="mt-2 text-xs text-muted">{t("cart.qtyLabel")}</p>
+        <div className="mt-1 flex items-center gap-2">
           <button
             type="button"
             className="inline-flex size-11 items-center justify-center border border-line"
@@ -725,7 +727,7 @@ function CartRow({
           >
             <Minus className="size-4" />
           </button>
-          <span className="w-6 text-center text-sm tabular-nums">{line.qty}</span>
+          <span className="w-8 text-center text-base tabular-nums">{line.qty}</span>
           <button
             type="button"
             className="inline-flex size-11 items-center justify-center border border-line"
@@ -739,6 +741,9 @@ function CartRow({
             {t("cart.remove")}
           </button>
         </div>
+        <p className="mt-2 text-xs text-muted">
+          {line.size} · {fitLabel(line.fit)} · {colorName}
+        </p>
       </div>
     </li>
   );

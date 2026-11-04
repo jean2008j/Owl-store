@@ -109,6 +109,10 @@ function CheckoutPage() {
       live = false;
     };
   }, [step, zonesTick]);
+  // every new step opens at the top of the page
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [step]);
   const openCompanies = companies.filter((item) => item.enabled);
   const cityOptions: string[] = CITIES.filter((item) => openCompanies.some((c) => c.zones.some((z) => z.city === item)));
   const cityCompanies = openCompanies.filter((c) => c.zones.some((z) => z.city === city));
@@ -545,11 +549,11 @@ function CheckoutPage() {
         {step === 0 ? (
           <div className="mt-8 flex flex-col gap-4">
             <label>
-              <span className="field-label">{t("checkout.fullName")}</span>
+              <span className="field-label text-base! text-fg!">{t("checkout.fullName")}</span>
               <input className="field" maxLength={80} value={name} onChange={(event) => setName(event.target.value)} />
             </label>
             <label>
-              <span className="field-label">{t("checkout.phone")}</span>
+              <span className="field-label text-base! text-fg!">{t("checkout.phone")}</span>
               <input
                 className="field"
                 maxLength={20}
@@ -565,7 +569,7 @@ function CheckoutPage() {
         {step === 1 ? (
           <div className="mt-8 flex flex-col gap-4">
             <label>
-              <span className="field-label">{t("checkout.city")}</span>
+              <span className="field-label text-base! text-fg!">{t("checkout.city")}</span>
               <select
                 className="field"
                 value={city}
@@ -588,7 +592,16 @@ function CheckoutPage() {
             </label>
             {city ? (
               <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("checkout.company")}>
-                <p className="field-label">{t(methodOnly ? "checkout.method" : "checkout.company")}</p>
+                <p className="field-label text-base! text-fg!">
+                  {t(methodOnly ? "checkout.method" : "checkout.company")}{" "}
+                  <span className="text-sm font-normal text-muted">{t("checkout.shipPriceNote")}</span>
+                  {!methodOnly && cityCompanies.length > 1 ? (
+                    <>
+                      {" "}
+                      <span className="text-sm font-normal text-muted">{t("checkout.chooseCompany")}</span>
+                    </>
+                  ) : null}
+                </p>
                 {cityCompanies.map((item) => {
                   const z = item.zones.find((entry) => entry.city === city);
                   const chosen = company?.id === item.id;
@@ -643,7 +656,7 @@ function CheckoutPage() {
                 <>
                   {areaList.length > 0 ? (
                     <div role="radiogroup" aria-label={t("checkout.area")}>
-                      <p className="field-label">{t("checkout.area")}</p>
+                      <p className="field-label text-base! text-fg!">{t("checkout.area")}</p>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {areaList.map((item) => (
                           <button
@@ -664,7 +677,7 @@ function CheckoutPage() {
                     </div>
                   ) : null}
                   <label>
-                    <span className="field-label">{t("checkout.address")}</span>
+                    <span className="field-label text-base! text-fg!">{t("checkout.address")}</span>
                     <textarea
                       className="field min-h-28"
                       maxLength={300}
@@ -683,7 +696,7 @@ function CheckoutPage() {
           <div className="mt-8">
             {showCoupon ? (
               <div className="mb-6 border border-line p-4">
-                <p className="field-label">{t("checkout.coupon.title")}</p>
+                <p className="field-label text-base! text-fg!">{t("checkout.coupon.title")}</p>
                 {appliedCode ? (
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="font-display text-lg tracking-widest">{appliedCode}</p>
@@ -724,8 +737,22 @@ function CheckoutPage() {
                 ) : null}
               </div>
             ) : null}
-            <div className="grid gap-6 border border-line p-4 sm:grid-cols-[180px_1fr]">
-              <div className="bg-fg p-3">
+            <div className="flex flex-col items-center gap-4 border border-line p-5 text-center">
+              <p className="text-base leading-relaxed">{t("checkout.transfer", { amount: money(total) })}</p>
+              <p className="font-display text-2xl tracking-widest" dir="ltr">
+                {settings.shamCashId}
+              </p>
+              <button
+                type="button"
+                className="btn-line"
+                onClick={() => {
+                  void navigator.clipboard.writeText(settings.shamCashId);
+                  toast(t("checkout.idCopied"));
+                }}
+              >
+                {t("checkout.copyId")}
+              </button>
+              <div className="w-full max-w-[220px] bg-fg p-3">
                 {settings.shamCashQr ? (
                   <img
                     src={settings.shamCashQr}
@@ -736,26 +763,7 @@ function CheckoutPage() {
                   <QrMark value={settings.shamCashId} />
                 )}
               </div>
-              <div>
-                <p className="field-label">{t("checkout.payAccount")}</p>
-                <p className="font-display text-2xl tracking-widest">{settings.shamCashName}</p>
-                <p className="mt-2 font-display text-lg tracking-widest">{settings.shamCashId}</p>
-                <p className="mt-3 text-sm text-muted">
-                  {t("checkout.transfer", { amount: money(total) })}
-                </p>
-                <button
-                  type="button"
-                  className="btn-line mt-4"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(settings.shamCashId);
-                    toast(t("checkout.idCopied"));
-                  }}
-                >
-                  {t("checkout.copyId")}
-                </button>
-              </div>
             </div>
-            <p className="field-label mt-6">{t("checkout.receipt")}</p>
             <label
               onDragOver={(event) => {
                 event.preventDefault();
@@ -768,7 +776,7 @@ function CheckoutPage() {
                 handleReceiptFile(event.dataTransfer.files?.[0]);
               }}
               className={cn(
-                "group relative flex min-h-64 w-full cursor-pointer flex-col items-center justify-center gap-4 border-2 border-dashed px-6 py-10 text-center transition-colors focus-within:border-fg",
+                "group relative mt-6 flex min-h-64 w-full cursor-pointer flex-col items-center justify-center gap-4 border-2 border-dashed px-6 py-10 text-center transition-colors focus-within:border-fg",
                 dragOver ? "border-fg bg-fg/10" : receipt ? "border-fg bg-fg/5" : "border-line bg-surface hover:border-fg hover:bg-fg/5",
               )}
             >
@@ -809,10 +817,6 @@ function CheckoutPage() {
                   <span className="font-display text-xl leading-tight tracking-widest uppercase sm:text-2xl">
                     {t("checkout.receiptTitle")}
                   </span>
-                  <span className="text-sm text-muted">{t("checkout.receiptHint")}</span>
-                  <span className="border border-line px-3 py-1 text-xs tracking-widest text-muted">
-                    {t("checkout.receiptFormats")}
-                  </span>
                 </>
               )}
             </label>
@@ -840,7 +844,12 @@ function CheckoutPage() {
             </button>
           ) : null}
           {step < 2 ? (
-            <button type="button" className="btn-solid" onClick={next} disabled={step === 1 && cityOptions.length === 0}>
+            <button
+              type="button"
+              className="btn-solid min-w-0 flex-1 justify-center text-center text-base"
+              onClick={next}
+              disabled={step === 1 && cityOptions.length === 0}
+            >
               {t("checkout.continue")}
             </button>
           ) : (
@@ -856,7 +865,14 @@ function CheckoutPage() {
         <ul className="mt-4 flex flex-col gap-4">
           {rows.map(({ line, product, colorName }) => (
             <li key={`${line.productId}-${line.size}-${line.fit}`} className="flex gap-3">
-              <img src={product.images[0]} alt="" className="aspect-garment w-16 rounded-lg object-cover" />
+              <img
+                src={
+                  product.images[Math.max(0, product.colors.findIndex((c) => c.id === line.colorId))] ||
+                  product.images[0]
+                }
+                alt=""
+                className="aspect-garment w-16 rounded-lg object-cover"
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex justify-between gap-3 text-sm">
                   <span>{productName(product)}</span>
