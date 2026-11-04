@@ -121,7 +121,7 @@ const browserStorage = {
 export const useOwl = create<OwlState>()(
   persist(
     (set) => ({
-      lang: "en",
+      lang: "ar",
       setLang: (lang) => set({ lang }),
       theme: "dark",
       setTheme: (theme) => set({ theme }),

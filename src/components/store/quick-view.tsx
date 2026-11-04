@@ -237,15 +237,21 @@ export function QuickView({
                   <button
                     key={item}
                     type="button"
-                    disabled={!open}
+                    disabled={color ? !open : false}
                     aria-pressed={size === item}
-                    onClick={() => setSize(item)}
+                    onClick={() => {
+                      if (!color) {
+                        toast(t("quick.chooseColorToast"));
+                        return;
+                      }
+                      setSize(item);
+                    }}
                     className={
                       size === item
                         ? "min-h-10 bg-fg text-sm text-bg"
                         : cn(
                             "min-h-10 border border-line text-sm text-fg disabled:text-muted",
-                            color ? "disabled:line-through" : "disabled:opacity-40",
+                            color ? "disabled:line-through" : "opacity-40",
                           )
                     }
                   >

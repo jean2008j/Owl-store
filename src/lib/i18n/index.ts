@@ -36,9 +36,9 @@ function readStoredLang(): Lang {
     const value = localStorage.getItem(LANG_KEY);
     if (value === "ar" || value === "en") return value;
   } catch {
-    /* storage blocked — fall back to English */
+    /* storage blocked — fall back to Arabic */
   }
-  return "en";
+  return "ar";
 }
 
 export function dirOf(lang: Lang) {
@@ -54,7 +54,7 @@ function applyToDocument(lang: Lang) {
 type LangState = { lang: Lang; setLang: (lang: Lang) => void };
 
 export const useLang = create<LangState>()((set) => ({
-  lang: typeof window === "undefined" ? "en" : readStoredLang(),
+  lang: typeof window === "undefined" ? "ar" : readStoredLang(),
   setLang: (lang) => {
     try {
       localStorage.setItem(LANG_KEY, lang);
