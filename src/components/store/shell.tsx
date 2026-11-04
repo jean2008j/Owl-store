@@ -202,30 +202,20 @@ export function Shell() {
       {/* Floating glass header — zero height so the page (hero) shows through behind it */}
       <div className="sticky top-0 z-30 h-0" dir="ltr">
         <div className="px-3 pt-2 lg:px-5">
-          <div className="overflow-hidden rounded-xl bg-white/75 text-black shadow-lg backdrop-blur-xl backdrop-saturate-150 lg:bg-black/40 lg:text-white">
-            <header className="px-3 lg:px-6">
-              {/* Mobile: burger (far left) · brand (centre) · language, theme, search, bag (bag far right) */}
-              <div className="flex items-center py-1.5 lg:hidden">
+          <div className="text-black max-lg:overflow-visible lg:overflow-hidden lg:rounded-xl lg:bg-black/40 lg:text-white lg:shadow-lg lg:backdrop-blur-xl lg:backdrop-saturate-150">
+            <header className="px-0 lg:px-6">
+              {/* Mobile: round burger (left) · round language, theme, search, bag (right). No brand here. */}
+              <div className="flex items-center justify-between py-1.5 lg:hidden">
                 <button
                   type="button"
-                  className="inline-flex size-9 shrink-0 items-center justify-center"
+                  className={ROUND}
                   aria-label={menuOpen ? "Close menu" : "Open menu"}
                   aria-expanded={menuOpen}
                   onClick={() => setMenuOpen((open) => !open)}
                 >
-                  {menuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+                  {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
                 </button>
-                {/* centred in the free space between the burger and the controls */}
-                <div className="flex min-w-0 flex-1 justify-center">
-                  <Link
-                    to="/"
-                    className="font-display text-[23px] leading-none font-bold tracking-[0.05em] whitespace-nowrap text-black uppercase"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Athar &amp; Owl
-                  </Link>
-                </div>
-                <HeaderControls count={count} onOpen={() => setMenuOpen(false)} />
+                <HeaderControls round count={count} onOpen={() => setMenuOpen(false)} />
               </div>
               {/* Desktop: logo | nav | controls */}
               <div className="hidden min-h-[85px] grid-cols-[1fr_auto_1fr] items-center gap-6 py-3 lg:grid">
@@ -266,18 +256,31 @@ export function Shell() {
   );
 }
 
+const ROUND =
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-white/80 text-black shadow-md backdrop-blur-xl";
+
 /** Language · theme · search · cart — same size and same gap, identical in Arabic and English. */
-function HeaderControls({ count, onOpen }: { count: number; onOpen: () => void }) {
+function HeaderControls({
+  count,
+  onOpen,
+  round = false,
+}: {
+  count: number;
+  onOpen: () => void;
+  round?: boolean;
+}) {
   const lang = useOwl((state) => state.lang);
   const setLang = useOwl((state) => state.setLang);
   const theme = useOwl((state) => state.theme);
   const setTheme = useOwl((state) => state.setTheme);
   const setCartOpen = useOwl((state) => state.setCartOpen);
   const setSearchOpen = useOwl((state) => state.setSearchOpen);
-  const ring = "inline-flex size-9 w-[30px] shrink-0 items-center justify-center lg:w-9";
-  const plain = "relative inline-flex size-9 w-[30px] shrink-0 items-center justify-center lg:w-9";
+  const ring = round ? ROUND : "inline-flex size-9 w-[30px] shrink-0 items-center justify-center lg:w-9";
+  const plain = round
+    ? cn(ROUND, "relative")
+    : "relative inline-flex size-9 w-[30px] shrink-0 items-center justify-center lg:w-9";
   return (
-    <div className="flex items-center gap-0 lg:gap-1.5" dir="ltr">
+    <div className={cn("flex items-center", round ? "gap-2" : "gap-0 lg:gap-1.5")} dir="ltr">
       <button
         type="button"
         className={ring}
@@ -322,7 +325,7 @@ function HeaderControls({ count, onOpen }: { count: number; onOpen: () => void }
       >
         <ShoppingBag className="size-5" />
         {count > 0 ? (
-          <span className="absolute top-0 right-0 min-w-4 rounded-full bg-black px-1 text-center text-[11px] leading-4 font-semibold tabular-nums text-white lg:bg-white lg:text-black">
+          <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-black px-1 text-center text-[11px] leading-4 font-semibold tabular-nums text-white lg:bg-white lg:text-black">
             {count}
           </span>
         ) : null}
@@ -428,12 +431,12 @@ function MobileMenu({ open, onNavigate }: { open: boolean; onNavigate: () => voi
     <div
       className={cn(
         "grid transition-[grid-template-rows] duration-300 ease-out lg:hidden",
-        open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        open ? "mt-2 grid-rows-[1fr] rounded-xl bg-white/90 shadow-lg backdrop-blur-xl" : "grid-rows-[0fr]",
       )}
       aria-hidden={!open}
       inert={!open}
     >
-      <div className="min-h-0 overflow-hidden">
+      <div className="min-h-0 overflow-hidden rounded-xl">
         <nav
           dir={lang === "ar" ? "rtl" : "ltr"}
           className="max-h-[calc(100svh-11rem)] overflow-y-auto border-t border-black/15 px-6 pt-2 pb-6"
