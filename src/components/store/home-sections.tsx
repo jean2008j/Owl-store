@@ -169,7 +169,7 @@ export function FeatureSection({
         src={image}
         alt={product?.name ?? ""}
         className={cn(
-          "w-full bg-[#e9e9ea] object-cover",
+          "w-full bg-transparent object-contain",
           preview ? "aspect-garment" : "aspect-garment md:aspect-auto md:h-full",
         )}
       />

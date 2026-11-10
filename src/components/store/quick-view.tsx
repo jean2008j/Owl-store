@@ -116,7 +116,7 @@ export function QuickView({
         {/* 1. Pictures with arrows */}
         <div
           className={cn(
-            "relative overflow-hidden bg-[#e9e9ea]",
+            "relative overflow-hidden bg-transparent",
             page ? "aspect-[3/4] w-full" : "min-h-[16rem] flex-1",
           )}
           onTouchStart={(event) => {

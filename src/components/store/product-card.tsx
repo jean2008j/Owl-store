@@ -53,7 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative">
         <div
           className={cn(
-            "relative block overflow-hidden bg-[#e9e9ea]",
+            "relative block overflow-hidden bg-transparent",
             !gone && "max-lg:cursor-pointer",
           )}
           onClick={() => {
