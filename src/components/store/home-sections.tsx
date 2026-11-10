@@ -161,7 +161,7 @@ export function FeatureSection({
   const product = products.find((item) => item.id === content.featureProductId);
   const cat = productCat(product);
   const label = shopLabel(lang, cat);
-  const image = product?.images[0] ?? "/media/crest-1.jpg";
+  const image = product?.images[0] ?? "/products/black-set.webp";
 
   return (
     <section className={cn("grid border-t border-line", preview ? "grid-cols-2" : "md:grid-cols-2")}>
@@ -169,7 +169,7 @@ export function FeatureSection({
         src={image}
         alt={product?.name ?? ""}
         className={cn(
-          "w-full object-cover",
+          "w-full bg-[#e9e9ea] object-cover",
           preview ? "aspect-garment" : "aspect-garment md:aspect-auto md:h-full",
         )}
       />

@@ -18,7 +18,7 @@ export function ProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
   const { t, productName } = useI18n();
   const gone = isSoldOut(product);
-  const cover = product.images[0] || "/media/night-1.jpg";
+  const cover = product.images[0] || "/products/navy-jacket.webp";
   const alt = product.images[1];
   const showAlt = hot && !product.video && Boolean(alt);
 
@@ -53,7 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative">
         <div
           className={cn(
-            "relative block overflow-hidden bg-surface",
+            "relative block overflow-hidden bg-[#e9e9ea]",
             !gone && "max-lg:cursor-pointer",
           )}
           onClick={() => {
@@ -72,7 +72,7 @@ export function ProductCard({ product }: { product: Product }) {
             onLoad={() => setLoaded(true)}
             onError={() => setLoaded(true)}
             className={cn(
-              "aspect-garment w-full object-cover transition-opacity duration-300",
+              "aspect-garment w-full object-contain transition-opacity duration-300",
               (showAlt || !loaded) && "opacity-0",
             )}
           />
@@ -83,7 +83,7 @@ export function ProductCard({ product }: { product: Product }) {
               width={900}
               height={1200}
               className={cn(
-                "absolute inset-0 aspect-garment h-full w-full object-cover transition-opacity duration-200",
+                "absolute inset-0 aspect-garment h-full w-full object-contain transition-opacity duration-200",
                 showAlt ? "opacity-100" : "opacity-0",
               )}
             />

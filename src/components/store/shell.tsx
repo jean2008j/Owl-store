@@ -656,7 +656,7 @@ function CartDrawer() {
                   image={
                     product.images[Math.max(0, product.colors.findIndex((c) => c.id === line.colorId))] ||
                     product.images[0] ||
-                    "/media/night-1.jpg"
+                    "/products/navy-jacket.webp"
                   }
                   price={product.price}
                   colorName={colorName}
