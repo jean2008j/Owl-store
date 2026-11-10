@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
-import { money, sizeLeft, SIZES, visibleSizes, type Fit, type Product, type Size } from "@/lib/store/catalog";
+import { money, productVideos, sizeLeft, SIZES, visibleSizes, type Fit, type Product, type Size } from "@/lib/store/catalog";
 import { useI18n } from "@/lib/i18n";
 import { lineQtyInCart, useOwl } from "@/lib/store/owl-store";
 import { cn } from "@/lib/utils";
@@ -28,8 +28,10 @@ export function QuickView({
   const images = product.images.length ? product.images : ["/products/navy-jacket.webp"];
   const [index, setIndex] = useState(0);
   // the product video (if any) is the last slide, after the pictures
-  const slideCount = images.length + (product.video ? 1 : 0);
-  const isVideoSlide = Boolean(product.video) && index >= images.length;
+  const videos = productVideos(product);
+  const slideCount = images.length + videos.length;
+  const isVideoSlide = index >= images.length && videos.length > 0;
+  const videoSrc = isVideoSlide ? videos[Math.min(index - images.length, videos.length - 1)] : "";
   const [size, setSize] = useState<Size | null>(null);
   // a single colour is chosen for the customer; with several colours they must pick one
   const [colorId, setColorId] = useState<string | null>(
@@ -134,8 +136,8 @@ export function QuickView({
         >
           {isVideoSlide ? (
             <video
-              key={product.video}
-              src={product.video}
+              key={videoSrc}
+              src={videoSrc}
               autoPlay
               muted
               loop

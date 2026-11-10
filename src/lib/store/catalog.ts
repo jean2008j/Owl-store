@@ -40,7 +40,9 @@ export type Product = {
   detailsEn?: string[];
   detailsAr?: string[];
   images: string[];
-  video: string;
+  video: string; // first video (kept for older code and saved data)
+  /** All videos of the product (the first one equals `video`). Missing on old products → `video` is used. */
+  videos?: string[];
   colors: ProductColor[];
   fits: Fit[];
   /** Total per size (sum over all colours). Kept in sync with `colorStock`; old code and old products read this. */
@@ -569,6 +571,12 @@ export function sizeLeft(product: Product, size: Size, colorId?: string) {
   const byColor = colorId ? product.colorStock?.[colorId] : undefined;
   if (byColor) return Math.max(0, byColor[size] ?? 0);
   return Math.max(0, product.stock[size] ?? 0);
+}
+
+/** Every video of a product (new `videos` list, or the single old `video`). */
+export function productVideos(product: Pick<Product, "video" | "videos">): string[] {
+  if (product.videos?.length) return product.videos.filter(Boolean);
+  return product.video ? [product.video] : [];
 }
 
 /** Does this product track stock per colour? */

@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { isSupabaseConfigured, uploadMediaToStorage } from "@/lib/db-service";
-import type { Product } from "@/lib/store/catalog";
+import { productVideos, type Product } from "@/lib/store/catalog";
 
 const isData = (src: string) => src.startsWith("data:");
 
@@ -10,12 +10,14 @@ const isData = (src: string) => src.startsWith("data:");
  */
 export async function uploadProductMedia(product: Product): Promise<Product> {
   if (!isSupabaseConfigured) return product;
-  if (!product.images.some(isData) && !isData(product.video)) return product;
+  const allVideos = productVideos(product);
+  if (!product.images.some(isData) && !allVideos.some(isData)) return product;
   const folder = `products/${product.id}`;
   const images: string[] = [];
   for (const src of product.images) images.push(isData(src) ? await uploadMediaToStorage(src, folder) : src);
-  const video = isData(product.video) ? await uploadMediaToStorage(product.video, folder) : product.video;
-  return { ...product, images, video };
+  const videos: string[] = [];
+  for (const src of allVideos) videos.push(isData(src) ? await uploadMediaToStorage(src, folder) : src);
+  return { ...product, images, video: videos[0] ?? "", videos };
 }
 
 /** For site pictures (hero …): upload when possible, otherwise keep the picture as it is. */

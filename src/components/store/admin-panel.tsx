@@ -37,6 +37,7 @@ import {
   type TextKey,
   NAV,
   productCat,
+  productVideos,
   shopLabel,
   type NavCat,
   SIZES,
@@ -940,7 +941,7 @@ function ProductsTab() {
   );
 }
 
-const MAX_MEDIA = 5;
+const MAX_MEDIA = 10;
 const MAX_VIDEO_BYTES = 8 * 1024 * 1024;
 const QTY_ROWS: Size[][] = [
   ["XS", "S", "M"],
@@ -1033,7 +1034,7 @@ function ProductForm({ initial, onDone }: { initial: Product | null; onDone: () 
   });
   const [media, setMedia] = useState<MediaItem[]>(() => [
     ...(initial?.images ?? []).map((src) => ({ kind: "image" as const, src })),
-    ...(initial?.video ? [{ kind: "video" as const, src: initial.video }] : []),
+    ...(initial ? productVideos(initial) : []).map((src) => ({ kind: "video" as const, src })),
   ]);
   const patch = (next: Partial<Product>) => setDraft((d) => ({ ...d, ...next }));
   // Colour being picked from its image (index into draft.colors), and colours whose hex must not be auto-overwritten:
@@ -1098,10 +1099,6 @@ function ProductForm({ initial, onDone }: { initial: Product | null; onDone: () 
       }
       try {
         if (file.type.startsWith("video/")) {
-          if (list.some((m) => m.kind === "video")) {
-            toast("يمكن إضافة فيديو واحد فقط للمنتج.");
-            continue;
-          }
           if (file.size > MAX_VIDEO_BYTES) {
             toast("حجم الفيديو كبير، الحد الأقصى 8 ميغابايت.");
             continue;
@@ -1199,6 +1196,7 @@ function ProductForm({ initial, onDone }: { initial: Product | null; onDone: () 
       colorStock,
       images: imageSrcs,
       video: media.find((m) => m.kind === "video")?.src ?? "",
+      videos: media.filter((m) => m.kind === "video").map((m) => m.src),
       colors: colors.map((color) => {
         const old = initial?.colors.find((item) => item.id === color.id);
         return { ...color, nameEn: keepEn(color.nameEn, old?.nameEn, old?.name === color.name) };
@@ -1629,7 +1627,7 @@ function InventoryList({
                 try {
                   const uploaded = await uploadProductMedia(p);
                   if (uploaded !== p) {
-                    useOwl.getState().updateProduct(p.id, { images: uploaded.images, video: uploaded.video });
+                    useOwl.getState().updateProduct(p.id, { images: uploaded.images, video: uploaded.video, videos: uploaded.videos });
                   }
                   const res = await upsertProductToDatabase(uploaded);
                   if (res && !res.ok) {
