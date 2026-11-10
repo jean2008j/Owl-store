@@ -27,6 +27,9 @@ export function QuickView({
 
   const images = product.images.length ? product.images : ["/products/navy-jacket.webp"];
   const [index, setIndex] = useState(0);
+  // the product video (if any) is the last slide, after the pictures
+  const slideCount = images.length + (product.video ? 1 : 0);
+  const isVideoSlide = Boolean(product.video) && index >= images.length;
   const [size, setSize] = useState<Size | null>(null);
   // a single colour is chosen for the customer; with several colours they must pick one
   const [colorId, setColorId] = useState<string | null>(
@@ -36,7 +39,7 @@ export function QuickView({
   const touchX = useRef<number | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  const go = (delta: number) => setIndex((i) => (i + delta + images.length) % images.length);
+  const go = (delta: number) => setIndex((i) => (i + delta + slideCount) % slideCount);
   // the arrows keep their physical side; in Arabic the left arrow moves forward
   const leftStep = isAr ? 1 : -1;
 
@@ -129,15 +132,28 @@ export function QuickView({
             if (Math.abs(dx) > 40) go(dx > 0 ? leftStep : -leftStep);
           }}
         >
-          <img
-            src={images[index]}
-            alt={productName(product)}
-            draggable={false}
-            className={cn(
-              "absolute inset-0 h-full w-full",
-              "object-contain",
-            )}
-          />
+          {isVideoSlide ? (
+            <video
+              key={product.video}
+              src={product.video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              className="absolute inset-0 h-full w-full bg-black object-contain"
+            />
+          ) : (
+            <img
+              src={images[index]}
+              alt={productName(product)}
+              draggable={false}
+              className={cn(
+                "absolute inset-0 h-full w-full",
+                "object-contain",
+              )}
+            />
+          )}
           <button
             ref={closeRef}
             type="button"
@@ -148,7 +164,7 @@ export function QuickView({
           >
             <X className="size-4" />
           </button>
-          {images.length > 1 ? (
+          {slideCount > 1 ? (
             <>
               <button
                 type="button"
@@ -167,7 +183,7 @@ export function QuickView({
                 <ChevronRight className="size-9" strokeWidth={1.5} />
               </button>
               <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
-                {images.map((_, i) => (
+                {Array.from({ length: slideCount }, (_, i) => (
                   <span
                     key={i}
                     className={cn("size-1.5 rounded-full shadow", i === index ? "bg-white" : "bg-white/45")}
