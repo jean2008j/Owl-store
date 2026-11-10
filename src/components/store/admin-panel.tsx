@@ -8,7 +8,6 @@ import {
   LockOpen,
   Minus,
   Monitor,
-  Moon,
   Pencil,
   Pipette,
   Plus,
@@ -16,7 +15,6 @@ import {
   RotateCcw,
   Search,
   Smartphone,
-  Sun,
   Trash2,
   Upload,
   X,
@@ -77,24 +75,6 @@ const TAB_LABEL: Record<(typeof TABS)[number], string> = {
 const ICON_BTN =
   "inline-flex size-11 shrink-0 items-center justify-center border border-line text-fg transition-colors hover:bg-fg hover:text-bg";
 
-/** One button that flips between dark and light mode. */
-function ThemeToggle() {
-  const theme = useOwl((state) => state.theme);
-  const setTheme = useOwl((state) => state.setTheme);
-  const dark = theme === "dark";
-  const label = dark ? "التبديل إلى الوضع الفاتح" : "التبديل إلى الوضع الداكن";
-  return (
-    <button
-      type="button"
-      className={ICON_BTN}
-      title={label}
-      aria-label={label}
-      onClick={() => setTheme(dark ? "light" : "dark")}
-    >
-      {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}
-    </button>
-  );
-}
 
 export function AdminPanel() {
   const unlocked = useOwl((state) => state.adminUnlocked);
@@ -119,7 +99,6 @@ export function AdminPanel() {
           <span className={cn(ICON_BTN, "pointer-events-none")} aria-hidden>
             <Lock className="size-5" />
           </span>
-          <ThemeToggle />
         </div>
         <p className="mt-6 font-display text-xs tracking-brand text-muted uppercase">الإدارة</p>
         <h1 className="mt-3 font-display text-4xl uppercase leading-none">التحكم بالمتجر</h1>
@@ -200,7 +179,6 @@ function Dashboard() {
           <h1 className="mt-2 font-display text-4xl uppercase leading-none">لوحة التحكم</h1>
         </div>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <button
             type="button"
             className={ICON_BTN}

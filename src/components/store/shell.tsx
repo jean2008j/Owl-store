@@ -11,12 +11,10 @@ import {
   Menu,
   MessageCircle,
   Minus,
-  Moon,
   Plus,
   Search,
   Send,
   ShoppingBag,
-  Sun,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -47,7 +45,6 @@ export function Shell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const theme = useOwl((state) => state.theme);
-  const setTheme = useOwl((state) => state.setTheme);
   const cartOpen = useOwl((state) => state.cartOpen);
   const searchOpen = useOwl((state) => state.searchOpen);
   const setCartOpen = useOwl((state) => state.setCartOpen);
@@ -271,8 +268,6 @@ function HeaderControls({
 }) {
   const lang = useOwl((state) => state.lang);
   const setLang = useOwl((state) => state.setLang);
-  const theme = useOwl((state) => state.theme);
-  const setTheme = useOwl((state) => state.setTheme);
   const setCartOpen = useOwl((state) => state.setCartOpen);
   const setSearchOpen = useOwl((state) => state.setSearchOpen);
   const ring = round ? ROUND : "inline-flex size-9 w-[30px] shrink-0 items-center justify-center lg:w-9";
@@ -293,15 +288,6 @@ function HeaderControls({
         ) : (
           <CenteredGlyph className="font-sans text-[18px] font-semibold">ع</CenteredGlyph>
         )}
-      </button>
-      <button
-        type="button"
-        className={ring}
-        aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        title={theme === "dark" ? "Light mode" : "Dark mode"}
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      >
-        {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
       </button>
       <button
         type="button"

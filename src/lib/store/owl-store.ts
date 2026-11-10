@@ -123,7 +123,7 @@ export const useOwl = create<OwlState>()(
     (set) => ({
       lang: "ar",
       setLang: (lang) => set({ lang }),
-      theme: "dark",
+      theme: "light",
       setTheme: (theme) => set({ theme }),
       updateContent: (lang, patch) => {
         set((state) => ({
@@ -278,7 +278,7 @@ export const useOwl = create<OwlState>()(
       ),
       // Older saved data has no per-language content — fill it from the defaults.
       merge: (persisted, current) => {
-        const saved = (persisted ?? {}) as Partial<OwlState>;
+        const saved = { ...((persisted ?? {}) as Partial<OwlState>), theme: "light" as const };
         const savedSettings = (saved.settings ?? {}) as Partial<Settings>;
         return {
           ...current,
