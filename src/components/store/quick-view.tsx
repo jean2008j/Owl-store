@@ -25,7 +25,7 @@ export function QuickView({
   const addLine = useOwl((state) => state.addLine);
   const cart = useOwl((state) => state.cart);
 
-  const images = product.images.length ? product.images : ["/media/night-1.jpg"];
+  const images = product.images.length ? product.images : ["/products/navy-jacket.webp"];
   const [index, setIndex] = useState(0);
   const [size, setSize] = useState<Size | null>(null);
   // a single colour is chosen for the customer; with several colours they must pick one
@@ -116,7 +116,7 @@ export function QuickView({
         {/* 1. Pictures with arrows */}
         <div
           className={cn(
-            "relative overflow-hidden bg-surface",
+            "relative overflow-hidden bg-[#e9e9ea]",
             page ? "aspect-[3/4] w-full" : "min-h-[16rem] flex-1",
           )}
           onTouchStart={(event) => {
@@ -135,7 +135,7 @@ export function QuickView({
             draggable={false}
             className={cn(
               "absolute inset-0 h-full w-full",
-              page ? "object-contain" : "object-cover",
+              "object-contain",
             )}
           />
           <button
