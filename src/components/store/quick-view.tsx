@@ -140,8 +140,10 @@ export function QuickView({
               muted
               loop
               playsInline
-              controls
-              className="absolute inset-0 h-full w-full bg-black object-contain"
+              disablePictureInPicture
+              controlsList="nodownload noplaybackrate noremoteplayback"
+              onContextMenu={(event) => event.preventDefault()}
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover"
             />
           ) : (
             <img
