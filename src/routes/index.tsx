@@ -39,15 +39,15 @@ function Home() {
                 key={item.cat}
                 to="/shop"
                 search={{ cat: item.cat }}
-                className="group relative block aspect-[3/4] overflow-hidden rounded-xl border border-line bg-transparent"
+                className="group block overflow-hidden rounded-2xl border border-fg/30 bg-transparent"
               >
                 <img
                   src={image}
                   alt=""
                   loading="lazy"
-                  className="absolute inset-0 h-full w-full object-contain p-3 pb-12 transition-transform duration-500 group-hover:scale-105"
+                  className="aspect-garment w-full object-contain transition-transform duration-500 group-hover:scale-105"
                 />
-                <span className="absolute inset-x-0 bottom-0 p-3 text-center font-sans text-sm font-semibold text-fg">
+                <span className="block px-4 py-4 text-center font-sans text-sm font-semibold text-fg">
                   {catLabel(lang, item.cat)}
                 </span>
               </Link>
