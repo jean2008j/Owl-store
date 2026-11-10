@@ -29,8 +29,7 @@ export const en = {
   // navigation + categories
   "nav.admin": "Admin",
   "nav.new": "New Drops",
-  "nav.shirts": "Shirts",
-  "nav.hoodies": "Blouses",
+  "nav.hoodies": "Jackets",
   "nav.tees": "T-Shirt",
   "nav.pants": "Pants",
   "nav.shorts": "Shorts",
@@ -38,8 +37,7 @@ export const en = {
   "nav.sale": "Sale",
   "cat.all": "Shop all",
   "cat.new": "New drop",
-  "cat.shirts": "Shirt",
-  "cat.hoodies": "Blouse",
+  "cat.hoodies": "Jacket",
   "cat.pants": "Pants",
   "cat.pajamas": "Pajamas",
 
@@ -355,8 +353,7 @@ export const ar = {
 
   "nav.admin": "الإدارة",
   "nav.new": "الجديد",
-  "nav.shirts": "قمصان",
-  "nav.hoodies": "بلوزات",
+  "nav.hoodies": "جاكيتات",
   "nav.tees": "T-Shirt",
   "nav.pants": "بناطيل",
   "nav.shorts": "شورتات",
@@ -364,8 +361,7 @@ export const ar = {
   "nav.sale": "تخفيضات",
   "cat.all": "تسوّق الكل",
   "cat.new": "دروب جديد",
-  "cat.shirts": "قميص",
-  "cat.hoodies": "بلوزة",
+  "cat.hoodies": "جاكيت",
   "cat.pants": "بنطال",
   "cat.pajamas": "بيجاما",
 

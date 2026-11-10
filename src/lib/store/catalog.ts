@@ -9,10 +9,10 @@ export type Size = (typeof SIZES)[number];
 export const FITS = ["Oversize", "Boxy Fit", "Regular Fit"] as const;
 export type Fit = (typeof FITS)[number];
 
-export const TAGS = ["new", "shirts", "hoodies", "pants", "pajamas"] as const;
+export const TAGS = ["new", "hoodies", "pants", "pajamas"] as const;
 export type Tag = (typeof TAGS)[number];
 
-export const CATS = ["all", "new", "shirts", "hoodies", "pants", "pajamas"] as const;
+export const CATS = ["all", "new", "hoodies", "pants", "pajamas"] as const;
 export type Cat = (typeof CATS)[number];
 
 export type ProductColor = {
@@ -290,8 +290,7 @@ export type Coupon = {
 
 export const NAV: { label: string; cat: Exclude<Cat, "all"> }[] = [
   { label: "New Drop", cat: "new" },
-  { label: "Shirt", cat: "shirts" },
-  { label: "Blouse", cat: "hoodies" },
+  { label: "Jacket", cat: "hoodies" },
   { label: "Pants", cat: "pants" },
   { label: "Pajamas", cat: "pajamas" },
 ];
@@ -299,8 +298,7 @@ export const NAV: { label: string; cat: Exclude<Cat, "all"> }[] = [
 export const CAT_LABEL: Record<Cat, string> = {
   all: "All products",
   new: "New drop",
-  shirts: "Shirt",
-  hoodies: "Blouse",
+  hoodies: "Jacket",
   pants: "Pants",
   pajamas: "Pajamas",
 };
@@ -673,15 +671,13 @@ export function blankProduct(): Product {
 export const NAV_LABEL: Record<Lang, Record<NavCat, string>> = {
   en: {
     new: "New Drop",
-    shirts: "Shirt",
-    hoodies: "Blouse",
+    hoodies: "Jacket",
     pants: "Pants",
     pajamas: "Pajamas",
   },
   ar: {
     new: "دروب جديد",
-    shirts: "قميص",
-    hoodies: "بلوزة",
+    hoodies: "جاكيت",
     pants: "بنطال",
     pajamas: "بيجاما",
   },
@@ -691,15 +687,13 @@ export const NAV_LABEL: Record<Lang, Record<NavCat, string>> = {
 const SHOP_WORD: Record<Lang, Record<NavCat, string>> = {
   en: {
     new: "Shop new drop",
-    shirts: "Shop shirts",
-    hoodies: "Shop blouses",
+    hoodies: "Shop jackets",
     pants: "Shop pants",
     pajamas: "Shop pajamas",
   },
   ar: {
     new: "تسوق دروب جديد",
-    shirts: "تسوق القمصان",
-    hoodies: "تسوق البلوزات",
+    hoodies: "تسوق الجاكيتات",
     pants: "تسوق البناطيل",
     pajamas: "تسوق البيجامات",
   },
@@ -709,10 +703,10 @@ export function shopLabel(lang: Lang, cat: NavCat) {
   return SHOP_WORD[lang][cat];
 }
 
-/** The "kind" of a product (shirts / blouses / pants / pajamas), used to label buttons that link to it. */
+/** The "kind" of a product (jackets / pants / pajamas), used to label buttons that link to it. */
 export function productCat(product: Product | undefined): NavCat {
   if (!product) return "new";
-  for (const cat of ["shirts", "hoodies", "pants", "pajamas"] as const) {
+  for (const cat of ["hoodies", "pants", "pajamas"] as const) {
     if (product.tags.includes(cat)) return cat;
   }
   return "new";
