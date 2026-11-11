@@ -17,8 +17,8 @@ export type Cat = (typeof CATS)[number];
 
 export type ProductColor = {
   id: string;
-  name: string; // as typed in the admin (Arabic)
-  nameEn?: string; // filled automatically (Arabic → English)
+  name: string;
+  nameEn?: string;
   nameAr?: string;
   hex: string;
 };
@@ -26,11 +26,11 @@ export type ProductColor = {
 export type Product = {
   id: string;
   slug: string;
-  name: string; // as typed in the admin (Arabic)
-  nameEn?: string; // filled automatically (Arabic → English)
+  name: string;
+  nameEn?: string;
   nameAr?: string;
   price: number;
-  cost?: number | null; // what the piece costs you (admin only, never shown to customers)
+  cost?: number | null;
   compareAt: number | null;
   tags: Tag[];
   description: string;
@@ -40,14 +40,11 @@ export type Product = {
   detailsEn?: string[];
   detailsAr?: string[];
   images: string[];
-  video: string; // first video (kept for older code and saved data)
-  /** All videos of the product (the first one equals `video`). Missing on old products → `video` is used. */
+  video: string;
   videos?: string[];
   colors: ProductColor[];
   fits: Fit[];
-  /** Total per size (sum over all colours). Kept in sync with `colorStock`; old code and old products read this. */
   stock: Record<Size, number>;
-  /** Stock per colour and size: { [colorId]: { XS: 2, S: 4, … } }. Missing on old products → `stock` is used. */
   colorStock?: Record<string, Record<Size, number>>;
   soldOut: boolean;
 };
@@ -64,7 +61,6 @@ export type Lang = "en" | "ar";
 
 export type NavCat = Exclude<Cat, "all">;
 
-/** Texts on the storefront whose font size the admin can change. */
 export type TextKey =
   | "heroKicker"
   | "heroTitle"
@@ -73,24 +69,22 @@ export type TextKey =
   | "featureTitle"
   | "featureBody";
 
-/** Font size is a percentage of the normal size (100 = unchanged). */
 export const SIZE_MIN = 50;
 export const SIZE_MAX = 300;
 export const SIZE_STEP = 10;
 
-/** Everything the admin can edit on the storefront, stored once per language. */
 export type SiteContent = {
-  sizes?: Partial<Record<TextKey, number>>; // font size per text, in % (missing = 100)
+  sizes?: Partial<Record<TextKey, number>>;
   heroKicker: string;
   heroTitle: string;
   heroSub: string;
-  heroImages: string[]; // 1–3 images (laptop / landscape)
-  heroImagesMobile: string[]; // 0–3 portrait images for phones (empty → laptop images are used)
-  heroCat: NavCat; // where the hero button goes ("Shop <category>")
+  heroImages: string[];
+  heroImagesMobile: string[];
+  heroCat: NavCat;
   featureKicker: string;
   featureTitle: string;
   featureBody: string;
-  featureProductId: string; // linked product — drives the image and button
+  featureProductId: string;
 };
 
 export const MAX_HERO_IMAGES = 3;
@@ -99,12 +93,12 @@ export type Settings = {
   content: Record<Lang, SiteContent>;
   shamCashId: string;
   shamCashName: string;
-  shamCashQr: string; // uploaded picture of the Sham Cash QR code ("" → a generated one is shown)
+  shamCashQr: string;
   telegramBotToken: string;
   telegramChatId: string;
   adminPin: string;
-  storePassword: string; // customers' store password (local/demo mode only; with Supabase it lives in the database)
-  storePasswordEnabled: boolean; // false → no password screen
+  storePassword: string;
+  storePasswordEnabled: boolean;
 };
 
 export type OrderItem = {
@@ -128,30 +122,26 @@ export type Order = {
     address: string;
   };
   shipping: { id: string; label: string; fee: number; companyId?: string };
-  /** Only used to build the Telegram message (the database keeps the joined `customer.address`). */
   addressParts?: { area: string; detail: string; pickup: boolean };
-  /** What the customer was told about delivery (shown on the order page). */
   delivery?: {
     pickup: boolean;
     office: string;
-    /** Phone of the company office (shown on the order page). */
     officePhone?: string;
     etaAr: string;
     etaEn: string;
     companyAr: string;
     companyEn: string;
-    /** false = a store option (pick-up from the shop / own delivery), not a shipping company. */
     isCompany?: boolean;
   };
   items: OrderItem[];
   subtotal: number;
-  discount?: number; // coupon discount on the items (shipping is never discounted)
-  coupon?: string | null; // coupon code used on this order
+  discount?: number;
+  coupon?: string | null;
   total: number;
   payment: "Sham Cash";
   receiptDataUrl: string;
   telegram: "sent" | "failed" | "unconfigured";
-  status: "pending" | "confirmed" | "fulfilled" | "cancelled"; // cancelled = final: stock and coupon use are given back
+  status: "pending" | "confirmed" | "fulfilled" | "cancelled";
 };
 
 export const CITIES = [
@@ -172,26 +162,23 @@ export const CITIES = [
   "Qamishli",
 ] as const;
 
-/** A governorate a shipping company delivers to (with its own delivery time and pick-up / delivery areas). */
 export type CompanyZone = {
-  city: string; // English governorate name, same list as CITIES
-  areas: string; // areas separated by «،» (home delivery) or the office address (pick-up)
+  city: string;
+  areas: string;
   etaAr: string;
   etaEn: string;
-  /** Office phone shown to the customer (pick-up companies, e.g. Sila). Optional. */
   phone?: string;
 };
 
-/** A shipping company (Sila, Al-Rafidain…). Flat fee, covers some governorates. The customer picks one at checkout. */
 export type ShippingCompany = {
   id: string;
   nameAr: string;
   nameEn: string;
   fee: number;
-  deliveryAr: string; // e.g. "إلى باب المنزل" / "الاستلام من مكتب الشركة"
+  deliveryAr: string;
   deliveryEn: string;
-  pickup: boolean; // true = the customer collects from the company office (no detailed address; the zone's text is the office address)
-  isCompany?: boolean; // false = not a shipping company (e.g. pick-up from the store / own delivery). Missing = true.
+  pickup: boolean;
+  isCompany?: boolean;
   enabled: boolean;
   sortOrder: number;
   zones: CompanyZone[];
@@ -208,25 +195,25 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
     id: "sila",
     nameAr: "صلة",
     nameEn: "Sila",
-    fee: 2,
-    deliveryAr: "الاستلام من مكتب الشركة",
-    deliveryEn: "Pick-up from the company office",
-    pickup: true,
+    fee: 4,
+    deliveryAr: "إلى باب المنزل",
+    deliveryEn: "Home delivery",
+    pickup: false,
     enabled: true,
     sortOrder: 1,
     zones: [
-      sila("Damascus", "الزبلطاني، خلف الهجرة والجوازات، المنطقة الصناعية، مقسم رقم 11", "0989700311"),
-      sila("Rural Damascus", "الزبلطاني، خلف الهجرة والجوازات، المنطقة الصناعية، مقسم رقم 11", "0989700311"),
-      sila("Deir ez-Zor", "", ""),
-      sila("Tartus", "طرطوس جنوب حديقة الملجأ - غرب فلافل العرب", "0989700314"),
-      sila("Aleppo", "الأعظمية - خط صلاح الدين بعد مفرق عوجة باتجاه جسر قصر الضيافة مقابل شركة الهرم", "0989700312"),
-      sila("Hama", "البارودية - جانب مديرية النفوس", "0989700316"),
-      sila("Homs", "كرم اللوز - خلف مشفى كرم اللوز العيادات", "0989700315"),
-      sila("Daraa", "شمال الخط - بعد مطعم فلفول (مستر نوح) بـ200 متر نحو الشرق", "0989700317"),
-      sila("Idlib", "إدلب المدينة - شارع الـ40 مقابل مدرسة المتنبي", "0989700310"),
-      sila("Al-Hasakah", "الكلاسة - شارع الـ34 - مقابل جامع السيدة زينب", "0989700320"),
-      sila("Raqqa", "سوق الهال القديم جانب معرض الفرحان", "0989700319"),
-      sila("Latakia", "المشروع السابع - شارع الشعبة", "0989700313"),
+      sila("Damascus", ""),
+      sila("Rural Damascus", ""),
+      sila("Deir ez-Zor", ""),
+      sila("Tartus", ""),
+      sila("Aleppo", ""),
+      sila("Hama", ""),
+      sila("Homs", ""),
+      sila("Daraa", ""),
+      sila("Idlib", ""),
+      sila("Al-Hasakah", ""),
+      sila("Raqqa", ""),
+      sila("Latakia", ""),
     ],
   },
   {
@@ -246,7 +233,6 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
       { city: "Al-Hasakah", areas: "كراج تل حجز", etaAr: "يوم واحد", etaEn: "1 day" },
     ],
   },
-  // Qamishli: store pick-up + Al-Rafidain home delivery (same company card as other governorates).
   {
     id: "qamishli-store",
     nameAr: "استلام من المحل",
@@ -275,7 +261,6 @@ export const DEFAULT_SHIPPING_COMPANIES: ShippingCompany[] = [
   },
 ];
 
-/** A discount code (the customer never reads this table; the database validates it). */
 export type Coupon = {
   id: string;
   code: string;
@@ -284,11 +269,10 @@ export type Coupon = {
   minOrder: number;
   maxUses: number | null;
   usedCount: number;
-  startsAt: string | null; // ISO
-  endsAt: string | null; // ISO
+  startsAt: string | null;
+  endsAt: string | null;
   active: boolean;
 };
-
 
 export const NAV: { label: string; cat: Exclude<Cat, "all"> }[] = [
   { label: "New Drop", cat: "new" },
@@ -558,14 +542,12 @@ export function isSoldOut(product: Product) {
   return SIZES.every((size) => (product.stock[size] ?? 0) <= 0);
 }
 
-/** Sizes shown to customers: the standard ones, plus 3XL only when it is in stock. */
 export function visibleSizes(product: Product, colorId?: string | null): readonly Size[] {
   const byColor = colorId ? product.colorStock?.[colorId] : undefined;
   const source = byColor ?? product.stock;
   return SIZES.filter((size) => size !== "3XL" || (source[size] ?? 0) > 0);
 }
 
-/** Pieces left of a size. Pass the colour to get that colour's stock (falls back to the size total on old products). */
 export function sizeLeft(product: Product, size: Size, colorId?: string) {
   if (product.soldOut) return 0;
   const byColor = colorId ? product.colorStock?.[colorId] : undefined;
@@ -573,16 +555,13 @@ export function sizeLeft(product: Product, size: Size, colorId?: string) {
   return Math.max(0, product.stock[size] ?? 0);
 }
 
-/** The Sham Cash account the store shipped with before (treated as "not set" so the new one shows). */
 export const LEGACY_SHAM_IDS = ["OWL-SC-448291"];
 
-/** Every video of a product (new `videos` list, or the single old `video`). */
 export function productVideos(product: Pick<Product, "video" | "videos">): string[] {
   if (product.videos?.length) return product.videos.filter(Boolean);
   return product.video ? [product.video] : [];
 }
 
-/** Does this product track stock per colour? */
 export function hasColorStock(product: Product) {
   return Boolean(product.colorStock && Object.keys(product.colorStock).length);
 }
@@ -604,7 +583,6 @@ export function slugify(name: string) {
   return slug || "piece";
 }
 
-/** Arabic-Indic (٠-٩) and Persian (۰-۹) digits → 0-9, so phone numbers typed on an Arabic keyboard pass validation. */
 export function normalizeDigits(value: string) {
   return value
     .replace(/[\u0660-\u0669]/g, (ch) => String(ch.charCodeAt(0) - 0x0660))
@@ -618,19 +596,12 @@ export function makeRef() {
   return `OWL-${n}${letter}`;
 }
 
-/** 70, 4.5 … (no currency sign, no trailing zeros) for the invoice line in the Telegram message. */
 const plainNumber = (value: number) => String(Number(value.toFixed(2)));
 
-/**
- * The order message the store owner receives on Telegram (Arabic, one fact per line):
- * name · phone · governorate (detailed address) · product · colour · size · invoice value · invoice number.
- * An order with several pieces repeats the product / colour / size lines for each piece.
- */
 export function formatOrderText(order: Order) {
   const city = CITY_AR[order.customer.city] ?? order.customer.city;
   const parts = order.addressParts;
   const detail = (parts ? parts.detail : order.customer.address).replace(/\s*\n+\s*/g, "، ").trim();
-  // "المحافظة - المنطقة/المكتب (العنوان التفصيلي)": the detailed address is in brackets whenever the customer wrote one.
   const addressLine = parts
     ? `${city}${parts.area ? ` - ${parts.area}` : ""}${detail ? ` (${detail})` : ""}`
     : `${city}${detail ? ` (${detail})` : ""}`;
@@ -641,7 +612,6 @@ export function formatOrderText(order: Order) {
       `القياس: ${item.size}`,
     ].join("\n"),
   );
-  // products + (shipping) = total, e.g. "70 + (4) = 74"; a coupon discount is shown as "70 − 5 + (4) = 69".
   const invoice =
     plainNumber(order.subtotal) +
     (order.discount && order.discount > 0 ? ` − ${plainNumber(order.discount)}` : "") +
@@ -677,8 +647,6 @@ export function blankProduct(): Product {
   };
 }
 
-// ---------- Language helpers ----------
-
 export const NAV_LABEL: Record<Lang, Record<NavCat, string>> = {
   en: {
     new: "New Drop",
@@ -694,7 +662,6 @@ export const NAV_LABEL: Record<Lang, Record<NavCat, string>> = {
   },
 };
 
-/** Text on a "shop" button for a category, e.g. "Shop sets" / "تسوق الأطقم". */
 const SHOP_WORD: Record<Lang, Record<NavCat, string>> = {
   en: {
     new: "Shop new drop",
@@ -714,7 +681,6 @@ export function shopLabel(lang: Lang, cat: NavCat) {
   return SHOP_WORD[lang][cat];
 }
 
-/** The "kind" of a product (jackets / pants / pajamas), used to label buttons that link to it. */
 export function productCat(product: Product | undefined): NavCat {
   if (!product) return "new";
   for (const cat of ["hoodies", "pants", "pajamas"] as const) {
@@ -723,7 +689,6 @@ export function productCat(product: Product | undefined): NavCat {
   return "new";
 }
 
-/** Fill any missing fields (older saved data, partial database rows) from the defaults. */
 export function normalizeContent(value: unknown): Record<Lang, SiteContent> {
   const input = (value ?? {}) as Partial<Record<Lang, Partial<SiteContent>>>;
   const out = {} as Record<Lang, SiteContent>;
