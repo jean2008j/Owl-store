@@ -63,10 +63,9 @@ import {
   upsertProductToDatabase,
 } from "@/lib/db-service";
 
-const TABS = ["Stats", "Storefront", "Products", "Orders", "Offers", "Security"] as const;
+const TABS = ["Stats", "Products", "Orders", "Offers", "Security"] as const;
 const TAB_LABEL: Record<(typeof TABS)[number], string> = {
   Stats: "الإحصائيات",
-  Storefront: "واجهة المتجر",
   Products: "المنتجات",
   Orders: "الطلبات",
   Offers: "الشحن والعروض",
@@ -208,7 +207,6 @@ function Dashboard() {
       </div>
       <div className="mt-8 min-w-0">
         {tab === "Stats" ? <StatsTab /> : null}
-        {tab === "Storefront" ? <StorefrontTab /> : null}
         {tab === "Products" ? <ProductsTab /> : null}
         {tab === "Orders" ? <OrdersTab /> : null}
         {tab === "Offers" ? <OffersTab /> : null}
