@@ -87,17 +87,13 @@ function CheckoutPage() {
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // One order reference per checkout visit, and a guard against a second tap while an order is being sent.
   const submitting = useRef(false);
   const orderRef = useRef<string | null>(null);
 
-  // Shipping companies (Sila, Al-Rafidain…) are the only way to ship: the customer picks one and its flat fee applies.
-  // No enabled company (or none covering the city) = the customer cannot place an order.
   const [companies, setCompanies] = useState<ShippingCompany[]>(isSupabaseConfigured ? [] : DEFAULT_SHIPPING_COMPANIES);
   const [companyId, setCompanyId] = useState("");
   const [zonesLoaded, setZonesLoaded] = useState(false);
   const [zonesTick, setZonesTick] = useState(0);
-  // Reloaded on every step, so a governorate the admin closed while the customer was filling the form is noticed early.
   useEffect(() => {
     let live = true;
     void fetchShippingCompanies().then((companyRows) => {
@@ -109,7 +105,6 @@ function CheckoutPage() {
       live = false;
     };
   }, [step, zonesTick]);
-  // every new step opens at the top of the page
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
   }, [step]);
@@ -119,17 +114,14 @@ function CheckoutPage() {
   const company = cityCompanies.find((c) => c.id === companyId) ?? (cityCompanies.length === 1 ? cityCompanies[0] : null);
   const companyZone = company?.zones.find((z) => z.city === city) ?? null;
   const cityOpen = cityCompanies.length > 0;
-  // The shipping option that is actually chosen (null until a city — and, with companies, a company — is picked).
   const zone: { city: string; fee: number; etaAr: string; etaEn: string } | null =
     company && companyZone
       ? { city, fee: company.fee, etaAr: companyZone.etaAr, etaEn: companyZone.etaEn }
       : null;
   const pickup = Boolean(company?.pickup);
-  // A store option (pick-up from the shop / own delivery) is not a shipping company: no company wording anywhere.
   const isCompany = company?.isCompany !== false;
   const methodOnly = cityCompanies.length > 0 && cityCompanies.every((c) => c.isCompany === false);
   const areaList = !pickup && companyZone ? companyZone.areas.split(/[،,]/).map((a) => a.trim()).filter(Boolean) : [];
-  // What is saved as the address: the office for pick-up, or area + detailed address for home delivery.
   const detailText = address.trim();
   const finalAddress = (
     company && companyZone && pickup
@@ -142,7 +134,6 @@ function CheckoutPage() {
   ).slice(0, 300);
   const shipLabel = company ? (isAr ? company.nameAr : company.nameEn || company.nameAr) : "";
 
-  // The chosen governorate is no longer open: say so right away and send the customer back to pick another one.
   function cityClosed() {
     setError(t("checkout.err.cityUnavailable"));
     setCity("");
@@ -155,13 +146,11 @@ function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zonesLoaded, city, cityOpen]);
 
-  // The database prices the order (products + shipping + coupon). The browser only displays it.
   const [couponInput, setCouponInput] = useState("");
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
   const [couponMsg, setCouponMsg] = useState("");
   const [couponBusy, setCouponBusy] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
-  // quoteUnavailable = الدالة غير موجودة بالسيرفر (نخفي خانة الكود). quoteNetError = خطأ اتصال مؤقت (نبقي الخانة ونسمح بإعادة المحاولة).
   const [quoteUnavailable, setQuoteUnavailable] = useState(false);
   const [quoteNetError, setQuoteNetError] = useState(false);
   const [quoteTick, setQuoteTick] = useState(0);
@@ -179,7 +168,6 @@ function CheckoutPage() {
     return t(key, { min: money(min) });
   }
 
-  // applyCoupon already priced the order with the new code: remember it so the refresh below does not ask the server again.
   const skipQuote = useRef<{ sig: string; tick: number } | null>(null);
   const quoteSig = `${city}|${company?.id ?? ""}|${appliedCode ?? ""}|${quoteKey}|${zone?.fee ?? ""}`;
 
@@ -192,7 +180,6 @@ function CheckoutPage() {
     }
     if (skip && skip.sig === quoteSig && skip.tick === quoteTick) return;
     let live = true;
-    // Small delay: quick changes in the cart or the city send one request, not one per change.
     const timer = setTimeout(() => {
       void quoteOrder({ items: JSON.parse(quoteKey), city, code: appliedCode, company: company?.id }).then((res) => {
         if (!live) return;
@@ -200,7 +187,6 @@ function CheckoutPage() {
           if (res.error === "UNAVAILABLE") setQuoteUnavailable(true);
           setQuoteNetError(res.error === "NETWORK");
           setQuote(null);
-          // Do not fall back to the local numbers silently: tell the customer what happened.
           if (res.error === "CITY_UNAVAILABLE") {
             cityClosed();
           } else if (res.error === "PRODUCT_NOT_FOUND") {
@@ -213,7 +199,6 @@ function CheckoutPage() {
         }
         setQuoteNetError(false);
         if (res.couponError) {
-          // The code stopped being valid (expired, used up, cart changed): drop it, keep the order priced.
           setAppliedCode(null);
           setCouponMsg(couponError(res.couponError, res.couponMin));
         }
@@ -339,12 +324,10 @@ function CheckoutPage() {
       setError(t("checkout.err.receipt"));
       return;
     }
-    // Also works without a database (demo mode): never send an order to a governorate that is not open.
     if (!zone) {
       cityClosed();
       return;
     }
-    // Check against the latest stock from the database, not what the page loaded earlier.
     await refreshProducts().catch(() => {});
     const fresh = useOwl.getState().products;
     const over = rows.find((row) => {
@@ -357,12 +340,9 @@ function CheckoutPage() {
       return;
     }
 
-    // Price once more on the server. The customer already transferred the amount on screen,
-    // so if anything changed (price, code expiry) we stop and show the new total instead of charging a different one.
     if (isSupabaseConfigured && !quoteUnavailable) {
       const fresh = await quoteOrder({ items: quoteItems, city, code: appliedCode, company: company?.id });
       if (!fresh.ok && fresh.error !== "UNAVAILABLE") {
-        // خطأ اتصال مؤقت: ما نكمّل بدون فحص السعر الأخير (الزبون حوّل المبلغ فعلاً). نوقف ونخليه يعيد المحاولة.
         if (fresh.error === "NETWORK") {
           setQuoteNetError(true);
           setQuoteTick((n) => n + 1);
@@ -454,7 +434,6 @@ function CheckoutPage() {
         | { subtotal: number; shippingFee: number; discount: number; total: number; coupon: string | null }
         | true
         | null;
-      // The numbers the database actually saved are the ones we show and send to Telegram.
       if (saved && saved !== true) {
         order.subtotal = saved.subtotal;
         order.discount = saved.discount;
@@ -493,13 +472,11 @@ function CheckoutPage() {
         return;
       }
       if (failure?.code === "OUT_OF_STOCK") {
-        // Someone else took the last pieces a moment ago.
         await refreshProducts().catch(() => {});
         const product = useOwl.getState().products.find((item) => item.id === failure.productId);
         setError(t("checkout.err.stock", { name: product ? productName(product) : "" }));
         return;
       }
-      // Server codes like BAD_QTY / EMPTY_CART are not for customers: show the normal message instead.
       setError(
         cause instanceof Error && !/^[A-Z_]+$/.test(cause.message) ? cause.message : t("checkout.err.save"),
       );
@@ -624,7 +601,6 @@ function CheckoutPage() {
                   const chosen = company?.id === item.id;
                   const eta = z ? (isAr ? z.etaAr : z.etaEn || z.etaAr) : "";
                   const deliveryText = isAr ? item.deliveryAr : item.deliveryEn || item.deliveryAr;
-                  // Company office pick-up: the office address goes in the same card, in brackets.
                   const office = item.pickup && item.isCompany !== false ? (z?.areas ?? "").trim() : "";
                   const delivery = office ? `${deliveryText} (${office})` : deliveryText;
                   return (
@@ -651,19 +627,6 @@ function CheckoutPage() {
                     </button>
                   );
                 })}
-              </div>
-            ) : null}
-            {city && cityOpen && company?.id === "sila" ? (
-              <div className="border border-line px-4 py-3 text-sm leading-relaxed">
-                <p>{t("checkout.silaNote", { extra: money(2) })}</p>
-                {companyZone?.phone ? (
-                  <p className="mt-1 font-bold">
-                    {t("checkout.silaCall", { phone: "" })}
-                    <a href={`tel:${companyZone.phone}`} dir="ltr" className="underline underline-offset-4">
-                      {companyZone.phone}
-                    </a>
-                  </p>
-                ) : null}
               </div>
             ) : null}
             {company && companyZone && pickup && !isCompany ? (
@@ -799,7 +762,6 @@ function CheckoutPage() {
                 className="sr-only"
                 onChange={(event) => {
                   handleReceiptFile(event.target.files?.[0]);
-                  // lets the customer pick the same file again after removing it
                   event.target.value = "";
                 }}
               />
