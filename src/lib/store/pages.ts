@@ -11,11 +11,11 @@ export type PageContent = { kicker: string; title: string; blocks: PageBlock[] }
 export const PRIVACY: Record<Lang, PageContent> = {
   en: {
     kicker: "Policies",
-    title: "OWL Privacy Policy",
+    title: "ATHAR & OWL Privacy Policy",
     blocks: [
       {
         type: "p",
-        text: "At OWL, we are committed to protecting your privacy and ensuring your personal data is handled safely.",
+        text: "At ATHAR & OWL, we are committed to protecting your privacy and ensuring your personal data is handled safely.",
       },
       {
         type: "list",
@@ -42,11 +42,11 @@ export const PRIVACY: Record<Lang, PageContent> = {
   },
   ar: {
     kicker: "السياسات",
-    title: "سياسة الخصوصية في OWL",
+    title: "سياسة الخصوصية في ATHAR & OWL",
     blocks: [
       {
         type: "p",
-        text: "في OWL نلتزم بحماية خصوصيتك والتأكد من التعامل مع بياناتك الشخصية بأمان.",
+        text: "في ATHAR & OWL نلتزم بحماية خصوصيتك والتأكد من التعامل مع بياناتك الشخصية بأمان.",
       },
       {
         type: "list",
