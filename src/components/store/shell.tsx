@@ -25,6 +25,7 @@ import {
   CATALOG_VERSION,
   cloneSeed,
   defaultSettings,
+  LEGACY_SHAM_IDS,
   matchesCat,
   money,
   NAV,
@@ -86,6 +87,20 @@ export function Shell() {
       } else {
         useOwl.setState({ hydrated: true });
       }
+      // an old / empty Sham Cash account or QR (saved in this browser) gives way to the current default
+      {
+        const { settings } = useOwl.getState();
+        const stale = !settings.shamCashId || LEGACY_SHAM_IDS.includes(settings.shamCashId);
+        if (stale || !settings.shamCashQr) {
+          useOwl.setState({
+            settings: {
+              ...settings,
+              ...(stale ? { shamCashId: defaultSettings.shamCashId } : {}),
+              shamCashQr: settings.shamCashQr || defaultSettings.shamCashQr,
+            },
+          });
+        }
+      }
       void fetchProductsFromDatabase().then((rows) => {
         if (live && rows.length) useOwl.setState({ products: rows });
       });
@@ -95,9 +110,12 @@ export function Shell() {
         useOwl.setState((current) => ({
           settings: {
             ...current.settings,
-            ...(pay.shamCashId ? { shamCashId: String(pay.shamCashId) } : {}),
+            ...(pay.shamCashId && !LEGACY_SHAM_IDS.includes(String(pay.shamCashId))
+              ? { shamCashId: String(pay.shamCashId) }
+              : {}),
             ...(pay.shamCashName ? { shamCashName: String(pay.shamCashName) } : {}),
-            shamCashQr: typeof pay.shamCashQr === "string" ? pay.shamCashQr : "",
+            shamCashQr:
+              typeof pay.shamCashQr === "string" && pay.shamCashQr ? pay.shamCashQr : defaultSettings.shamCashQr,
           },
         }));
       });

@@ -765,7 +765,7 @@ function CheckoutPage() {
               >
                 {t("checkout.copyId")}
               </button>
-              <div className="w-full max-w-[220px] bg-fg p-3">
+              <div className="w-full max-w-[240px]">
                 {settings.shamCashQr ? (
                   <img
                     src={settings.shamCashQr}

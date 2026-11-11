@@ -346,9 +346,9 @@ export const defaultContent: Record<Lang, SiteContent> = {
 
 export const defaultSettings: Settings = {
   content: defaultContent,
-  shamCashId: "OWL-SC-448291",
+  shamCashId: "0dc8fc686c07928a1586c70717ce8561",
   shamCashName: "OWL STORE",
-  shamCashQr: "",
+  shamCashQr: "/sham-cash-qr.png",
   telegramBotToken: "",
   telegramChatId: "",
   adminPin: "OWL-2026",
@@ -572,6 +572,9 @@ export function sizeLeft(product: Product, size: Size, colorId?: string) {
   if (byColor) return Math.max(0, byColor[size] ?? 0);
   return Math.max(0, product.stock[size] ?? 0);
 }
+
+/** The Sham Cash account the store shipped with before (treated as "not set" so the new one shows). */
+export const LEGACY_SHAM_IDS = ["OWL-SC-448291"];
 
 /** Every video of a product (new `videos` list, or the single old `video`). */
 export function productVideos(product: Pick<Product, "video" | "videos">): string[] {
